@@ -16,8 +16,8 @@ window.WorldState = {
   selectedEntity: null,
 
   /*
-   * 保留这个字段用于兼容旧代码。
-   * 真正的数据源以 selectedEntity 为准。
+   * 兼容旧代码。
+   * 真正的选中状态以 selectedEntity 为准。
    */
   selectedLocationId: null,
 
@@ -61,8 +61,8 @@ window.WorldState = {
     };
 
     /*
-     * 兼容旧代码：
-     * 只有地点选择时才同步 selectedLocationId。
+     * 兼容旧逻辑。
+     * 只有地点选中时才记录 selectedLocationId。
      */
     this.selectedLocationId =
       type === 'location'
