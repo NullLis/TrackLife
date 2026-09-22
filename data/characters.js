@@ -1,1 +1,9 @@
-
+window.WorldData = window.WorldData || {};
+window.WorldData.characters = [
+  {id:'r1',name:'沈砚舟',role:'主角',x:150,y:118,color:'#d4a76a',startYear:1,endYear:null,factionId:'f1',locationIds:['m5','m6','m7','m13'],desc:'本书主角。幼年流落街头，因缘际会得《天枢剑典》，从此踏上修行之路。性格坚毅，重情重义，立志重振天枢阁剑道。',stats:{身份:'天枢阁阁主',境界:'剑圣',功法:'天枢剑典',武器:'断剑·霜寒'},statuses:[{from:1,to:2,label:'流浪少年',color:'#8b949e'},{from:3,to:4,label:'初入修行',color:'#6ba3d4'},{from:5,to:7,label:'剑道领袖',color:'#d4a76a'}]},
+  {id:'r2',name:'苏晚照',role:'女主',x:58,y:44,color:'#6ba3d4',startYear:1,endYear:null,factionId:'f2',locationIds:['m3','m13'],desc:'玄清门圣女，温婉果决。为救沈砚舟甘愿自废修为，是全书最重要的情感线人物。',stats:{身份:'玄清门圣女',境界:'剑仙',功法:'月华剑诀',武器:'软剑·流月'},statuses:[{from:1,to:4,label:'玄清门圣女',color:'#6ba3d4'},{from:5,to:7,label:'星陨之约',color:'#a78bda'}]},
+  {id:'r3',name:'陆沉',role:'挚友',x:242,y:44,color:'#6ad48a',startYear:1,endYear:null,factionId:'f5',locationIds:['m5','m7','m11'],desc:'沈砚舟生死之交。豪爽仗义，擅长江湖情报收集，是主角最重要的助力之一。',stats:{身份:'听雨楼客卿',境界:'宗师',功法:'沧浪掌',武器:'双刀·断浪'},statuses:[{from:1,to:2,label:'江湖游侠',color:'#8b949e'},{from:3,to:7,label:'听雨楼客卿',color:'#6ad48a'}]},
+  {id:'r4',name:'玄机老人',role:'师尊',x:44,y:190,color:'#a78bda',startYear:1,endYear:3,factionId:'f1',locationIds:['m5','m6'],desc:'神秘老者。天枢阁上代阁主，百年前封印魔尊后隐退江湖，是沈砚舟的授业恩师。',stats:{身份:'天枢阁上代阁主',境界:'剑神',功法:'天枢剑典',状态:'已故'},statuses:[{from:1,to:3,label:'隐世授道',color:'#a78bda'}]},
+  {id:'r5',name:'萧无咎',role:'宿敌',x:256,y:190,color:'#d46a6a',startYear:1,endYear:null,factionId:'f2',locationIds:['m3','m4','m8'],desc:'玄清门叛徒。为求力量堕入魔道，是沈砚舟一生之敌。剑道天赋极高，性情阴狠。',stats:{身份:'血月教左使',境界:'剑仙',功法:'血影剑诀',武器:'魔剑·噬魂'},statuses:[{from:1,to:3,label:'玄清门弟子',color:'#6ba3d4'},{from:4,to:7,label:'堕入魔道',color:'#d46a6a'}]},
+  {id:'r6',name:'厉沧溟',role:'魔尊',x:150,y:216,color:'#d46a6a',startYear:1,endYear:null,factionId:'f3',locationIds:['m8','m9'],desc:'血月教教主。百年前被玄机老人封印，天启五年破封而出，天下震动。全书最终反派。',stats:{身份:'血月教教主',境界:'魔尊',功法:'血月魔功',状态:'已破封'},statuses:[{from:1,to:4,label:'封印中',color:'#8b949e'},{from:5,to:7,label:'破封',color:'#d46a6a'}]}
+];
