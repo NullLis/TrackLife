@@ -38,7 +38,7 @@ window.SidebarUI = (() => {
     );
 
     /*
-     * 关闭时统一清除全局选中状态。
+     * 关闭详情时统一清除全局选中状态。
      */
     if (
       WorldState.selectedEntity
@@ -93,32 +93,31 @@ window.SidebarUI = (() => {
       return;
     }
 
+    /*
+     * 切换详情内容时始终保持右侧打开。
+     */
     open();
 
     if (
-      selected.type ===
-      'location'
+      selected.type === 'location'
     ) {
       renderLocation(item);
     }
 
     if (
-      selected.type ===
-      'faction'
+      selected.type === 'faction'
     ) {
       renderFaction(item);
     }
 
     if (
-      selected.type ===
-      'character'
+      selected.type === 'character'
     ) {
       renderCharacter(item);
     }
 
     if (
-      selected.type ===
-      'event'
+      selected.type === 'event'
     ) {
       renderEvent(item);
     }
@@ -165,6 +164,7 @@ window.SidebarUI = (() => {
           .map(
             ([id, label]) => `
               <button
+                type="button"
                 class="detail-tab ${
                   WorldState.detailSubTab === id
                     ? 'active'
@@ -237,7 +237,7 @@ window.SidebarUI = (() => {
               background:${WorldUtils.hexA(
                 badgeColor,
                 0.08
-              )}
+              )};
             ">
             ${label}
           </div>
@@ -383,20 +383,46 @@ window.SidebarUI = (() => {
     );
   }
 
+  /*
+   * 详情页子标签。
+   *
+   * 重点：
+   * 1. stopPropagation()
+   * 2. preventDefault()
+   * 3. 不调用 close()
+   * 4. renderSelected() 内部会保持面板打开
+   */
   function wireTabs() {
     document
       .querySelectorAll(
         '.detail-tab'
       )
       .forEach(button => {
+        button.type = 'button';
+
         button.addEventListener(
           'click',
-          () => {
-            WorldState.detailSubTab =
+          event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const subTab =
               button.dataset.detailTab;
 
+            if (!subTab) {
+              return;
+            }
+
+            WorldState.detailSubTab =
+              subTab;
+
+            /*
+             * 重新渲染当前对象。
+             * renderSelected() 会自动保持右侧打开。
+             */
             renderSelected();
-          }
+          },
+          false
         );
       });
   }
@@ -520,7 +546,8 @@ window.SidebarUI = (() => {
       WorldData.characters.filter(
         character =>
           (
-            character.locationIds || []
+            character.locationIds ||
+            []
           ).includes(
             location.id
           )
@@ -537,6 +564,7 @@ window.SidebarUI = (() => {
           faction
             ? `
               <button
+                type="button"
                 class="content-page-chip"
                 data-nav-type="faction"
                 data-nav-id="${faction.id}">
@@ -567,6 +595,7 @@ window.SidebarUI = (() => {
               .map(
                 character => `
                   <button
+                    type="button"
                     class="content-page-chip"
                     data-nav-type="character"
                     data-nav-id="${character.id}">
@@ -758,7 +787,8 @@ window.SidebarUI = (() => {
       WorldData.locations.filter(
         location =>
           (
-            faction.territory || []
+            faction.territory ||
+            []
           ).includes(
             location.id
           ) &&
@@ -782,6 +812,7 @@ window.SidebarUI = (() => {
               .map(
                 location => `
                   <button
+                    type="button"
                     class="content-page-chip"
                     data-nav-type="location"
                     data-nav-id="${location.id}">
@@ -876,6 +907,7 @@ window.SidebarUI = (() => {
                 .map(
                   location => `
                     <button
+                      type="button"
                       class="content-page-chip"
                       data-nav-type="location"
                       data-nav-id="${location.id}">
@@ -916,14 +948,7 @@ window.SidebarUI = (() => {
     character
   ) {
     /*
-     * 修复：
-     *
-     * 原来的：
-     *
-     * x.from===id ||
-     * x.to===id && active
-     *
-     * 会因为 && 优先级更高而产生错误。
+     * 修复 || / && 优先级问题。
      */
     const activeEdges =
       WorldData.characterRelations.filter(
@@ -1229,6 +1254,7 @@ window.SidebarUI = (() => {
               .map(
                 item => `
                   <button
+                    type="button"
                     class="content-page-chip"
                     data-nav-type="${type}"
                     data-nav-id="${item.id}">
@@ -1328,7 +1354,7 @@ window.SidebarUI = (() => {
               style="
                 color:var(--gold);
                 border-color:rgba(212,167,106,.35);
-                background:rgba(212,167,106,.08)
+                background:rgba(212,167,106,.08);
               ">
               世界
             </div>
@@ -1426,7 +1452,7 @@ window.SidebarUI = (() => {
   }
 
   /*
-   * 详情页内部跳转。
+   * 详情页内部的地点 / 人物 / 势力跳转。
    */
   document.addEventListener(
     'click',
@@ -1437,6 +1463,13 @@ window.SidebarUI = (() => {
         );
 
       if (nav) {
+        /*
+         * 这是右侧详情页内部操作，
+         * 不允许它触发外部关闭逻辑。
+         */
+        event.preventDefault();
+        event.stopPropagation();
+
         WorldState.select(
           nav.dataset.navType,
           nav.dataset.navId
@@ -1460,6 +1493,9 @@ window.SidebarUI = (() => {
         );
 
       if (eventCard) {
+        event.preventDefault();
+        event.stopPropagation();
+
         WorldState.select(
           'event',
           eventCard.dataset.eventId
@@ -1471,8 +1507,7 @@ window.SidebarUI = (() => {
   );
 
   /*
-   * 点击右侧信息页之外的空白区域，
-   * 自动关闭。
+   * 点击右侧信息页外部才关闭。
    */
   document.addEventListener(
     'click',
@@ -1484,6 +1519,9 @@ window.SidebarUI = (() => {
         return;
       }
 
+      /*
+       * 没打开，不处理。
+       */
       if (
         !side.classList.contains(
           'open'
@@ -1493,18 +1531,40 @@ window.SidebarUI = (() => {
       }
 
       /*
-       * 点击右侧信息页内部。
+       * 右侧信息页内部的任何点击
+       * 都不允许触发关闭。
+       *
+       * 特别包含：
+       * 概览
+       * 资源
+       * 关系
+       * 事件
+       * 地点跳转
+       * 人物跳转
+       * 势力跳转
        */
       if (
         event.target.closest(
           '#mapSidebar'
+        ) ||
+        event.target.closest(
+          '.detail-tabs'
+        ) ||
+        event.target.closest(
+          '.detail-tab'
+        ) ||
+        event.target.closest(
+          '[data-nav-type]'
+        ) ||
+        event.target.closest(
+          '[data-event-id]'
         )
       ) {
         return;
       }
 
       /*
-       * 点击地图地点。
+       * 地图地点。
        */
       if (
         event.target.closest(
@@ -1555,7 +1615,7 @@ window.SidebarUI = (() => {
       }
 
       /*
-       * 图例。
+       * 地图图例。
        */
       if (
         event.target.closest(
@@ -1577,21 +1637,8 @@ window.SidebarUI = (() => {
       }
 
       /*
-       * 内部跳转。
-       */
-      if (
-        event.target.closest(
-          '[data-nav-type]'
-        ) ||
-        event.target.closest(
-          '[data-event-id]'
-        )
-      ) {
-        return;
-      }
-
-      /*
-       * 到这里就是地图空白区域。
+       * 能走到这里，
+       * 就是真正的地图空白区域。
        */
       close();
     }
@@ -1608,8 +1655,10 @@ window.SidebarUI = (() => {
         'click',
         event => {
           /*
-           * 避免触发全局空白点击。
+           * 防止 handle 的点击
+           * 冒泡到全局关闭监听。
            */
+          event.preventDefault();
           event.stopPropagation();
 
           const side =
@@ -1633,12 +1682,12 @@ window.SidebarUI = (() => {
     }
 
     /*
-     * 只生成默认内容。
+     * 初始化内容。
      */
     renderWorldOverview();
 
     /*
-     * 首次打开页面时默认关闭。
+     * 初始默认收起。
      */
     const side =
       sidebar();
@@ -1654,8 +1703,12 @@ window.SidebarUI = (() => {
     }
 
     /*
-     * 选中对象变化：
-     * 更新右侧。
+     * 选择对象：
+     * 刷新右侧详情。
+     *
+     * 年份改变：
+     * 保持当前选中对象，
+     * 更新该对象在当前年份下的状态。
      */
     WorldState.on(
       reason => {
