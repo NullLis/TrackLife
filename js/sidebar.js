@@ -1391,22 +1391,24 @@ window.SidebarUI = (() => {
        那么页面空白区域永远不会触发关闭。
     ------------------------------------------------------- */
 
-    const keepOpenTarget =
-      event.target.closest(`
-        .resource-card,
-        [data-resource-id],
-        .rel-node,
-        .marker,
-        .info-tab,
-        .detail-tab,
-        [data-resource-filter],
-        #btnBackMap,
-        .tabs-wrapper,
-        .topbar,
-        .map-timeline,
-        .map-legend,
-        .timeline-event
-      `);
+const keepOpenTarget =
+  event.target.closest(`
+    .resource-card,
+    [data-resource-id],
+    .rel-node,
+    .marker,
+    .info-tab,
+    .detail-tab,
+    [data-resource-filter],
+    #btnBackMap,
+    .tabs-wrapper,
+    .topbar,
+    .map-timeline,
+    .map-legend,
+    .timeline-event,
+    .graph-large-svg,
+    .graph-large-wrap
+  `);
 
     if (keepOpenTarget) {
       return;
