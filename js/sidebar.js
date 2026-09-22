@@ -38,11 +38,7 @@ window.SidebarUI = (() => {
     );
 
     /*
-     * 关闭详情时，
-     * 同时清除全局选中状态。
-     *
-     * 不直接修改 selectedEntity，
-     * 必须通过 WorldState。
+     * 关闭时统一清除全局选中状态。
      */
     if (
       WorldState.selectedEntity
@@ -51,54 +47,32 @@ window.SidebarUI = (() => {
     }
   }
 
-  function stateFor(item) {
-    return WorldMap.currentState(
-      item,
-      WorldState.currentYear
-    );
-  }
-
   function entity(type, id) {
     if (type === 'location') {
       return WorldData.locations.find(
-        x => x.id === id
+        item => item.id === id
       );
     }
 
     if (type === 'faction') {
       return WorldData.factions.find(
-        x => x.id === id
+        item => item.id === id
       );
     }
 
     if (type === 'character') {
       return WorldData.characters.find(
-        x => x.id === id
+        item => item.id === id
       );
     }
 
     if (type === 'event') {
       return WorldData.events.find(
-        x => x.id === id
+        item => item.id === id
       );
     }
 
     return null;
-  }
-
-  function relatedLocationIdsForEntity(
-    type,
-    item
-  ) {
-    if (type === 'faction') {
-      return item.territory || [];
-    }
-
-    if (type === 'character') {
-      return item.locationIds || [];
-    }
-
-    return [];
   }
 
   function renderSelected() {
@@ -153,79 +127,31 @@ window.SidebarUI = (() => {
   function tabs(type) {
     const maps = {
       location: [
-        [
-          'overview',
-          '概览'
-        ],
-        [
-          'resources',
-          '资源'
-        ],
-        [
-          'relations',
-          '关系'
-        ],
-        [
-          'events',
-          '事件'
-        ]
+        ['overview', '概览'],
+        ['resources', '资源'],
+        ['relations', '关系'],
+        ['events', '事件']
       ],
 
       faction: [
-        [
-          'overview',
-          '概览'
-        ],
-        [
-          'relations',
-          '关系'
-        ],
-        [
-          'territory',
-          '领地'
-        ],
-        [
-          'events',
-          '事件'
-        ]
+        ['overview', '概览'],
+        ['relations', '关系'],
+        ['territory', '领地'],
+        ['events', '事件']
       ],
 
       character: [
-        [
-          'overview',
-          '概览'
-        ],
-        [
-          'relations',
-          '关系'
-        ],
-        [
-          'locations',
-          '地点'
-        ],
-        [
-          'events',
-          '事件'
-        ]
+        ['overview', '概览'],
+        ['relations', '关系'],
+        ['locations', '地点'],
+        ['events', '事件']
       ],
 
       event: [
-        [
-          'overview',
-          '概览'
-        ],
-        [
-          'locations',
-          '地点'
-        ],
-        [
-          'characters',
-          '人物'
-        ],
-        [
-          'factions',
-          '势力'
-        ]
+        ['overview', '概览'],
+        ['locations', '地点'],
+        ['characters', '人物'],
+        ['factions', '势力']
       ]
     };
 
@@ -240,8 +166,7 @@ window.SidebarUI = (() => {
             ([id, label]) => `
               <button
                 class="detail-tab ${
-                  WorldState.detailSubTab ===
-                  id
+                  WorldState.detailSubTab === id
                     ? 'active'
                     : ''
                 }"
@@ -293,9 +218,9 @@ window.SidebarUI = (() => {
               )}年 ·
               ${WorldUtils.escapeHtml(
                 status?.label ||
-                  item.role ||
-                  item.region ||
-                  '世界档案'
+                item.role ||
+                item.region ||
+                '世界档案'
               )}
             </div>
 
@@ -318,7 +243,6 @@ window.SidebarUI = (() => {
           </div>
 
         </div>
-
       </div>
     `;
   }
@@ -354,7 +278,7 @@ window.SidebarUI = (() => {
         )
         .join('');
 
-    const currentState =
+    const state =
       WorldMap.currentState(
         item,
         WorldState.currentYear
@@ -370,17 +294,14 @@ window.SidebarUI = (() => {
         <div
           class="state-badge"
           style="
-            color:${
-              currentState?.color ||
-              'var(--gold)'
-            };
+            color:${state?.color || 'var(--gold)'};
           ">
 
           <span class="state-dot"></span>
 
           ${WorldUtils.escapeHtml(
-            currentState?.label ||
-              '当前状态'
+            state?.label ||
+            '当前状态'
           )}
 
         </div>
@@ -396,7 +317,7 @@ window.SidebarUI = (() => {
         <div class="content-page-intro">
           ${WorldUtils.escapeHtml(
             item.desc ||
-              '暂无描述。'
+            '暂无描述。'
           )}
         </div>
 
@@ -428,14 +349,14 @@ window.SidebarUI = (() => {
     badgeColor,
     label
   ) {
-    const sideContent =
+    const target =
       content();
 
-    if (!sideContent) {
+    if (!target) {
       return null;
     }
 
-    sideContent.innerHTML = `
+    target.innerHTML = `
       <div class="content-page">
 
         ${header(
@@ -543,9 +464,7 @@ window.SidebarUI = (() => {
 
           <div class="content-page-list">
 
-            ${(
-              location.res || []
-            )
+            ${(location.res || [])
               .map(
                 resource => `
                   <span class="content-page-chip">
@@ -591,8 +510,8 @@ window.SidebarUI = (() => {
     const faction =
       location.factionId
         ? WorldData.factions.find(
-            x =>
-              x.id ===
+            item =>
+              item.id ===
               location.factionId
           )
         : null;
@@ -601,8 +520,7 @@ window.SidebarUI = (() => {
       WorldData.characters.filter(
         character =>
           (
-            character.locationIds ||
-            []
+            character.locationIds || []
           ).includes(
             location.id
           )
@@ -709,9 +627,7 @@ window.SidebarUI = (() => {
 
               <span
                 class="content-page-chip"
-                style="
-                  color:${faction.color};
-                ">
+                style="color:${faction.color}">
                 ${WorldUtils.escapeHtml(
                   faction.category
                 )}
@@ -796,8 +712,8 @@ window.SidebarUI = (() => {
 
               const other =
                 WorldData.factions.find(
-                  x =>
-                    x.id === id
+                  item =>
+                    item.id === id
                 );
 
               return `
@@ -806,17 +722,14 @@ window.SidebarUI = (() => {
                   <span class="content-page-stat-key">
                     ${WorldUtils.escapeHtml(
                       other?.name ||
-                        id
+                      id
                     )}
                   </span>
 
                   <span
                     class="content-page-stat-value"
                     style="
-                      color:${
-                        relation.color ||
-                        'var(--gold)'
-                      };
+                      color:${relation.color || 'var(--gold)'};
                     ">
                     ${WorldUtils.escapeHtml(
                       relation.label
@@ -845,8 +758,7 @@ window.SidebarUI = (() => {
       WorldData.locations.filter(
         location =>
           (
-            faction.territory ||
-            []
+            faction.territory || []
           ).includes(
             location.id
           ) &&
@@ -1004,7 +916,14 @@ window.SidebarUI = (() => {
     character
   ) {
     /*
-     * 已修复原先的 && / || 优先级问题。
+     * 修复：
+     *
+     * 原来的：
+     *
+     * x.from===id ||
+     * x.to===id && active
+     *
+     * 会因为 && 优先级更高而产生错误。
      */
     const activeEdges =
       WorldData.characterRelations.filter(
@@ -1039,8 +958,8 @@ window.SidebarUI = (() => {
 
               const other =
                 WorldData.characters.find(
-                  x =>
-                    x.id === id
+                  item =>
+                    item.id === id
                 );
 
               return `
@@ -1049,17 +968,14 @@ window.SidebarUI = (() => {
                   <span class="content-page-stat-key">
                     ${WorldUtils.escapeHtml(
                       other?.name ||
-                        id
+                      id
                     )}
                   </span>
 
                   <span
                     class="content-page-stat-value"
                     style="
-                      color:${
-                        relation.color ||
-                        'var(--gold)'
-                      };
+                      color:${relation.color || 'var(--gold)'};
                     ">
                     ${WorldUtils.escapeHtml(
                       relation.label
@@ -1085,7 +1001,7 @@ window.SidebarUI = (() => {
     type,
     id
   ) {
-    const items =
+    const events =
       WorldData.events.filter(
         event => {
           const key =
@@ -1109,7 +1025,7 @@ window.SidebarUI = (() => {
         </div>
 
         ${
-          items
+          events
             .map(
               event => `
                 <div
@@ -1135,12 +1051,10 @@ window.SidebarUI = (() => {
                   <div class="content-page-event-time">
                     天启${WorldUtils.toCN(
                       event.start
-                    )}年
-                    —
+                    )}年 —
                     天启${WorldUtils.toCN(
                       event.end
-                    )}年
-                    ·
+                    )}年 ·
                     ${
                       event.start <=
                         WorldState.currentYear &&
@@ -1339,22 +1253,12 @@ window.SidebarUI = (() => {
   }
 
   function renderWorldOverview() {
-    /*
-     * 注意：
-     * 如果没有选中实体时，不再因为
-     * selectionClear 自动打开侧栏。
-     */
-    open();
-
-    const sideContent =
+    const target =
       content();
 
-    if (!sideContent) {
+    if (!target) {
       return;
     }
-
-    WorldState.detailSubTab =
-      'overview';
 
     const year =
       WorldState.currentYear;
@@ -1386,14 +1290,14 @@ window.SidebarUI = (() => {
           )
       ).length;
 
-    const ongoingEvents =
+    const eventCount =
       WorldData.events.filter(
         event =>
           event.start <= year &&
           event.end >= year
       ).length;
 
-    sideContent.innerHTML = `
+    target.innerHTML = `
       <div class="content-page">
 
         <div class="content-page-top">
@@ -1492,7 +1396,7 @@ window.SidebarUI = (() => {
                 </div>
 
                 <div class="content-page-card-value">
-                  ${ongoingEvents}
+                  ${eventCount}
                 </div>
 
               </div>
@@ -1567,8 +1471,8 @@ window.SidebarUI = (() => {
   );
 
   /*
-   * 点击信息页外部的空白区域，
-   * 自动收起右侧详情。
+   * 点击右侧信息页之外的空白区域，
+   * 自动关闭。
    */
   document.addEventListener(
     'click',
@@ -1580,9 +1484,6 @@ window.SidebarUI = (() => {
         return;
       }
 
-      /*
-       * 当前已经关闭。
-       */
       if (
         !side.classList.contains(
           'open'
@@ -1592,8 +1493,7 @@ window.SidebarUI = (() => {
       }
 
       /*
-       * 信息页内部点击：
-       * 不关闭。
+       * 点击右侧信息页内部。
        */
       if (
         event.target.closest(
@@ -1604,7 +1504,7 @@ window.SidebarUI = (() => {
       }
 
       /*
-       * 地图地点。
+       * 点击地图地点。
        */
       if (
         event.target.closest(
@@ -1636,6 +1536,9 @@ window.SidebarUI = (() => {
        */
       if (
         event.target.closest(
+          '.map-timeline'
+        ) ||
+        event.target.closest(
           '#timelineEvents'
         ) ||
         event.target.closest(
@@ -1646,16 +1549,13 @@ window.SidebarUI = (() => {
         ) ||
         event.target.closest(
           '#timelineStats'
-        ) ||
-        event.target.closest(
-          '.map-timeline'
         )
       ) {
         return;
       }
 
       /*
-       * 地图图例。
+       * 图例。
        */
       if (
         event.target.closest(
@@ -1677,7 +1577,7 @@ window.SidebarUI = (() => {
       }
 
       /*
-       * 详情内部跳转按钮。
+       * 内部跳转。
        */
       if (
         event.target.closest(
@@ -1691,9 +1591,7 @@ window.SidebarUI = (() => {
       }
 
       /*
-       * 到这里：
-       *
-       * 点击的就是地图空白区域。
+       * 到这里就是地图空白区域。
        */
       close();
     }
@@ -1710,7 +1608,7 @@ window.SidebarUI = (() => {
         'click',
         event => {
           /*
-           * 防止冒泡到全局空白点击监听。
+           * 避免触发全局空白点击。
            */
           event.stopPropagation();
 
@@ -1735,35 +1633,29 @@ window.SidebarUI = (() => {
     }
 
     /*
-     * 首次初始化时只生成内容，
-     * 然后关闭。
+     * 只生成默认内容。
      */
     renderWorldOverview();
 
-    if (
-      !WorldState.selectedEntity
-    ) {
-      const side =
-        sidebar();
+    /*
+     * 首次打开页面时默认关闭。
+     */
+    const side =
+      sidebar();
 
-      if (side) {
-        side.classList.remove(
-          'open'
-        );
+    if (side) {
+      side.classList.remove(
+        'open'
+      );
 
-        side.classList.add(
-          'collapsed'
-        );
-      }
+      side.classList.add(
+        'collapsed'
+      );
     }
 
     /*
-     * 选择或年份变化时刷新当前详情。
-     *
-     * 注意：
-     * 不再监听 selectionClear，
-     * 防止 close() -> clearSelection()
-     * 又把世界概览重新打开。
+     * 选中对象变化：
+     * 更新右侧。
      */
     WorldState.on(
       reason => {
