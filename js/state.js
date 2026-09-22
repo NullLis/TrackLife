@@ -6,7 +6,7 @@ window.WorldState = {
   tabsCollapsed: false,
 
   /*
-   * 当前选中的世界实体：
+   * 当前选中的世界实体。
    *
    * {
    *   type: 'location' | 'faction' | 'character' | 'event',
@@ -17,7 +17,7 @@ window.WorldState = {
 
   /*
    * 兼容旧代码。
-   * 真正的选中状态以 selectedEntity 为准。
+   * 真正的选择状态以 selectedEntity 为准。
    */
   selectedLocationId: null,
 
@@ -60,10 +60,6 @@ window.WorldState = {
       id
     };
 
-    /*
-     * 兼容旧逻辑。
-     * 只有地点选中时才记录 selectedLocationId。
-     */
     this.selectedLocationId =
       type === 'location'
         ? id
@@ -85,7 +81,8 @@ window.WorldState = {
   },
 
   isSelected(type, id) {
-    const selected = this.selectedEntity;
+    const selected =
+      this.selectedEntity;
 
     return !!(
       selected &&
@@ -115,15 +112,17 @@ window.WorldState = {
   },
 
   emit(reason) {
-    const listeners = [...this.listeners];
+    const listeners = [
+      ...this.listeners
+    ];
 
-    listeners.forEach(fn => {
+    listeners.forEach(listener => {
       try {
-        fn(reason, this);
-      } catch (err) {
+        listener(reason, this);
+      } catch (error) {
         console.error(
           '[WorldState]',
-          err
+          error
         );
       }
     });
