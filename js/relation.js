@@ -9,8 +9,7 @@ window.RelationUI = (() => {
   }
 
   /*
-   * 根据 WorldState.selectedEntity
-   * 同步关系图选中状态。
+   * 根据全局选中状态同步关系图。
    */
   function syncSelectionVisuals() {
     document
@@ -78,391 +77,383 @@ window.RelationUI = (() => {
 
     const nodeMap =
       Object.fromEntries(
-        nodes.map(
-          node => [
-            node.id,
-            node
-          ]
-        )
+        nodes.map(node => [
+          node.id,
+          node
+        ])
       );
 
     /*
      * 关系线。
      */
-    edges.forEach(
-      edge => {
-        const a =
-          nodeMap[edge.from];
+    edges.forEach(edge => {
+      const a =
+        nodeMap[edge.from];
 
-        const b =
-          nodeMap[edge.to];
+      const b =
+        nodeMap[edge.to];
 
-        if (!a || !b) {
-          return;
-        }
+      if (!a || !b) {
+        return;
+      }
 
-        const dx =
-          b.x - a.x;
+      const dx =
+        b.x - a.x;
 
-        const dy =
-          b.y - a.y;
+      const dy =
+        b.y - a.y;
 
-        const len =
-          Math.hypot(
-            dx,
-            dy
-          ) || 1;
+      const len =
+        Math.hypot(
+          dx,
+          dy
+        ) || 1;
 
-        const ux =
-          dx / len;
+      const ux =
+        dx / len;
 
-        const uy =
-          dy / len;
+      const uy =
+        dy / len;
 
-        const x1 =
-          a.x + ux * 16;
+      const x1 =
+        a.x + ux * 16;
 
-        const y1 =
-          a.y + uy * 16;
+      const y1 =
+        a.y + uy * 16;
 
-        const x2 =
-          b.x - ux * 16;
+      const x2 =
+        b.x - ux * 16;
 
-        const y2 =
-          b.y - uy * 16;
+      const y2 =
+        b.y - uy * 16;
 
-        const line =
-          document.createElementNS(
-            NS,
-            'line'
-          );
+      const line =
+        document.createElementNS(
+          NS,
+          'line'
+        );
 
+      line.classList.add(
+        'rel-edge'
+      );
+
+      if (
+        WorldState.currentYear <
+        edge.startYear
+      ) {
         line.classList.add(
-          'rel-edge'
+          'future'
         );
+      }
 
-        if (
-          WorldState.currentYear <
-          edge.startYear
-        ) {
-          line.classList.add(
-            'future'
-          );
-        }
-
-        if (
-          edge.endYear &&
-          WorldState.currentYear >
+      if (
+        edge.endYear &&
+        WorldState.currentYear >
           edge.endYear
-        ) {
-          line.classList.add(
-            'rel-edge-ended'
-          );
-        }
-
-        line.setAttribute(
-          'x1',
-          x1
-        );
-
-        line.setAttribute(
-          'y1',
-          y1
-        );
-
-        line.setAttribute(
-          'x2',
-          x2
-        );
-
-        line.setAttribute(
-          'y2',
-          y2
-        );
-
-        line.setAttribute(
-          'stroke',
-          edge.color ||
-            '#4a5665'
-        );
-
-        line.setAttribute(
-          'stroke-width',
-          '1.6'
-        );
-
-        if (edge.dashed) {
-          line.setAttribute(
-            'stroke-dasharray',
-            '4 3'
-          );
-        }
-
-        edgesBox.appendChild(
-          line
-        );
-
-        /*
-         * 关系文字。
-         */
-        const label =
-          document.createElementNS(
-            NS,
-            'text'
-          );
-
-        label.classList.add(
-          'rel-edge-label'
-        );
-
-        label.setAttribute(
-          'x',
-          (x1 + x2) / 2
-        );
-
-        label.setAttribute(
-          'y',
-          (y1 + y2) / 2 - 3
-        );
-
-        label.textContent =
-          edge.label;
-
-        edgesBox.appendChild(
-          label
+      ) {
+        line.classList.add(
+          'rel-edge-ended'
         );
       }
-    );
+
+      line.setAttribute(
+        'x1',
+        x1
+      );
+
+      line.setAttribute(
+        'y1',
+        y1
+      );
+
+      line.setAttribute(
+        'x2',
+        x2
+      );
+
+      line.setAttribute(
+        'y2',
+        y2
+      );
+
+      line.setAttribute(
+        'stroke',
+        edge.color ||
+          '#4a5665'
+      );
+
+      line.setAttribute(
+        'stroke-width',
+        '1.6'
+      );
+
+      if (edge.dashed) {
+        line.setAttribute(
+          'stroke-dasharray',
+          '4 3'
+        );
+      }
+
+      edgesBox.appendChild(
+        line
+      );
+
+      const label =
+        document.createElementNS(
+          NS,
+          'text'
+        );
+
+      label.classList.add(
+        'rel-edge-label'
+      );
+
+      label.setAttribute(
+        'x',
+        (x1 + x2) / 2
+      );
+
+      label.setAttribute(
+        'y',
+        (y1 + y2) / 2 - 3
+      );
+
+      label.textContent =
+        edge.label;
+
+      edgesBox.appendChild(
+        label
+      );
+    });
 
     /*
-     * 人物 / 势力节点。
+     * 节点。
      */
-    nodes.forEach(
-      node => {
-        const future =
-          WorldMap.isFuture(
-            node,
-            WorldState.currentYear
-          );
+    nodes.forEach(node => {
+      const future =
+        WorldMap.isFuture(
+          node,
+          WorldState.currentYear
+        );
 
-        const ended =
-          WorldMap.isEnded(
-            node,
-            WorldState.currentYear
-          );
+      const ended =
+        WorldMap.isEnded(
+          node,
+          WorldState.currentYear
+        );
 
-        const group =
-          document.createElementNS(
-            NS,
-            'g'
-          );
+      const group =
+        document.createElementNS(
+          NS,
+          'g'
+        );
 
+      group.classList.add(
+        'rel-node'
+      );
+
+      if (future) {
         group.classList.add(
-          'rel-node'
-        );
-
-        if (future) {
-          group.classList.add(
-            'future'
-          );
-        }
-
-        if (ended) {
-          group.classList.add(
-            'rel-node-ended'
-          );
-        }
-
-        group.dataset.id =
-          node.id;
-
-        group.style.color =
-          node.color;
-
-        /*
-         * 外层光环。
-         */
-        const halo =
-          document.createElementNS(
-            NS,
-            'circle'
-          );
-
-        halo.setAttribute(
-          'cx',
-          node.x
-        );
-
-        halo.setAttribute(
-          'cy',
-          node.y
-        );
-
-        halo.setAttribute(
-          'r',
-          '15'
-        );
-
-        halo.setAttribute(
-          'fill',
-          node.color
-        );
-
-        halo.setAttribute(
-          'opacity',
-          '.12'
-        );
-
-        group.appendChild(
-          halo
-        );
-
-        /*
-         * 节点圆点。
-         */
-        const dot =
-          document.createElementNS(
-            NS,
-            'circle'
-          );
-
-        dot.classList.add(
-          'dot'
-        );
-
-        dot.setAttribute(
-          'cx',
-          node.x
-        );
-
-        dot.setAttribute(
-          'cy',
-          node.y
-        );
-
-        dot.setAttribute(
-          'r',
-          '8'
-        );
-
-        dot.setAttribute(
-          'fill',
-          node.color
-        );
-
-        dot.setAttribute(
-          'stroke',
-          '#0e1116'
-        );
-
-        dot.setAttribute(
-          'stroke-width',
-          '2'
-        );
-
-        group.appendChild(
-          dot
-        );
-
-        /*
-         * 名称。
-         */
-        const name =
-          document.createElementNS(
-            NS,
-            'text'
-          );
-
-        name.classList.add(
-          'rel-name'
-        );
-
-        name.setAttribute(
-          'x',
-          node.x
-        );
-
-        name.setAttribute(
-          'y',
-          node.y + 26
-        );
-
-        name.textContent =
-          node.name;
-
-        group.appendChild(
-          name
-        );
-
-        /*
-         * 身份 / 当前状态。
-         */
-        const role =
-          document.createElementNS(
-            NS,
-            'text'
-          );
-
-        role.classList.add(
-          'rel-role'
-        );
-
-        role.setAttribute(
-          'x',
-          node.x
-        );
-
-        role.setAttribute(
-          'y',
-          node.y + 37
-        );
-
-        role.textContent =
-          active(node)
-            ? node.role
-            : future
-              ? '尚未登场'
-              : '已离场';
-
-        group.appendChild(
-          role
-        );
-
-        /*
-         * 节点点击：
-         * 不再自行修改 selected class。
-         */
-        group.addEventListener(
-          'click',
-          event => {
-            event.stopPropagation();
-
-            if (future) {
-              showToast(
-                `“${node.name}”将在天启${WorldUtils.toCN(node.startYear)}年登场`
-              );
-
-              return;
-            }
-
-            onClick(node);
-          }
-        );
-
-        nodesBox.appendChild(
-          group
+          'future'
         );
       }
-    );
 
-    /*
-     * 渲染完成后，
-     * 根据全局状态同步 selected。
-     */
+      if (ended) {
+        group.classList.add(
+          'rel-node-ended'
+        );
+      }
+
+      group.dataset.id =
+        node.id;
+
+      group.style.color =
+        node.color;
+
+      /*
+       * 光晕。
+       */
+      const halo =
+        document.createElementNS(
+          NS,
+          'circle'
+        );
+
+      halo.setAttribute(
+        'cx',
+        node.x
+      );
+
+      halo.setAttribute(
+        'cy',
+        node.y
+      );
+
+      halo.setAttribute(
+        'r',
+        '15'
+      );
+
+      halo.setAttribute(
+        'fill',
+        node.color
+      );
+
+      halo.setAttribute(
+        'opacity',
+        '.12'
+      );
+
+      group.appendChild(
+        halo
+      );
+
+      /*
+       * 节点。
+       */
+      const dot =
+        document.createElementNS(
+          NS,
+          'circle'
+        );
+
+      dot.classList.add(
+        'dot'
+      );
+
+      dot.setAttribute(
+        'cx',
+        node.x
+      );
+
+      dot.setAttribute(
+        'cy',
+        node.y
+      );
+
+      dot.setAttribute(
+        'r',
+        '8'
+      );
+
+      dot.setAttribute(
+        'fill',
+        node.color
+      );
+
+      dot.setAttribute(
+        'stroke',
+        '#0e1116'
+      );
+
+      dot.setAttribute(
+        'stroke-width',
+        '2'
+      );
+
+      group.appendChild(
+        dot
+      );
+
+      /*
+       * 名称。
+       */
+      const name =
+        document.createElementNS(
+          NS,
+          'text'
+        );
+
+      name.classList.add(
+        'rel-name'
+      );
+
+      name.setAttribute(
+        'x',
+        node.x
+      );
+
+      name.setAttribute(
+        'y',
+        node.y + 26
+      );
+
+      name.textContent =
+        node.name;
+
+      group.appendChild(
+        name
+      );
+
+      /*
+       * 当前身份。
+       */
+      const role =
+        document.createElementNS(
+          NS,
+          'text'
+        );
+
+      role.classList.add(
+        'rel-role'
+      );
+
+      role.setAttribute(
+        'x',
+        node.x
+      );
+
+      role.setAttribute(
+        'y',
+        node.y + 37
+      );
+
+      role.textContent =
+        active(node)
+          ? node.role
+          : future
+            ? '尚未登场'
+            : '已离场';
+
+      group.appendChild(
+        role
+      );
+
+      /*
+       * 点击节点。
+       *
+       * 不直接操作 selected class，
+       * 统一通过 WorldState。
+       */
+      group.addEventListener(
+        'click',
+        event => {
+          event.stopPropagation();
+
+          if (future) {
+            showToast(
+              `“${node.name}”将在天启${WorldUtils.toCN(node.startYear)}年登场`
+            );
+
+            return;
+          }
+
+          onClick(node);
+        }
+      );
+
+      nodesBox.appendChild(
+        group
+      );
+    });
+
     syncSelectionVisuals();
   }
 
   function renderAll() {
+    /*
+     * 势力关系。
+     */
     renderGraph(
       'factionEdges',
       'factionNodes',
@@ -476,6 +467,9 @@ window.RelationUI = (() => {
       }
     );
 
+    /*
+     * 人物关系。
+     */
     renderGraph(
       'relationEdges',
       'relationNodes',
