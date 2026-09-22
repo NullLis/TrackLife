@@ -1,18 +1,23 @@
 window.WorldMap = (() => {
+
   const NS = WorldUtils.svgNS;
 
   const VIEW_W = 1600;
   const VIEW_H = 1013;
 
   let isDragging = false;
-
   let dragStartX = 0;
   let dragStartY = 0;
-
   let startX = 0;
   let startY = 0;
 
+
+  /* =========================================================
+     时间状态
+  ========================================================= */
+
   function isActive(item, year) {
+
     const start =
       item.startYear ??
       item.year ??
@@ -28,7 +33,9 @@ window.WorldMap = (() => {
     );
   }
 
+
   function isFuture(item, year) {
+
     const start =
       item.startYear ??
       item.year ??
@@ -37,80 +44,53 @@ window.WorldMap = (() => {
     return year < start;
   }
 
+
   function isEnded(item, year) {
+
     return (
       Number.isFinite(item.endYear) &&
       year > item.endYear
     );
   }
 
+
   function currentState(item, year) {
+
     const states =
       item.states || [];
 
     return (
       states.find(
-        state =>
-          year >= state.from &&
-          year <= state.to
-      ) ||
+        s =>
+          year >= s.from &&
+          year <= s.to
+      )
+
+      ||
+
       states
         .filter(
-          state =>
-            year >= state.from
+          s =>
+            year >= s.from
         )
         .sort(
           (a, b) =>
             b.from - a.from
-        )[0] ||
+        )[0]
+
+      ||
+
       null
     );
   }
 
-  /*
-   * 根据 WorldState.selectedEntity
-   * 同步地图地点的选中状态。
-   */
-  function syncSelectionVisuals() {
-    document
-      .querySelectorAll(
-        '.marker.selected'
-      )
-      .forEach(marker => {
-        marker.classList.remove(
-          'selected'
-        );
-      });
 
-    const selected =
-      WorldState.selectedEntity;
-
-    if (!selected) {
-      return;
-    }
-
-    /*
-     * 地图目前只处理地点选中。
-     */
-    if (
-      selected.type !== 'location'
-    ) {
-      return;
-    }
-
-    const marker =
-      document.querySelector(
-        `.marker[data-id="${selected.id}"]`
-      );
-
-    if (marker) {
-      marker.classList.add(
-        'selected'
-      );
-    }
-  }
+  /* =========================================================
+     地图区域
+  ========================================================= */
 
   function renderRegions() {
+
     const box =
       document.getElementById(
         'mapRegions'
@@ -128,8 +108,10 @@ window.WorldMap = (() => {
     box.innerHTML = '';
     labels.innerHTML = '';
 
+
     window.WorldData.regions.forEach(
       region => {
+
         const path =
           document.createElementNS(
             NS,
@@ -164,13 +146,16 @@ window.WorldMap = (() => {
         );
 
         if (region.dashed) {
+
           path.setAttribute(
             'stroke-dasharray',
             '6 4'
           );
+
         }
 
         box.appendChild(path);
+
 
         const text =
           document.createElementNS(
@@ -208,100 +193,135 @@ window.WorldMap = (() => {
           region.name;
 
         labels.appendChild(text);
+
       }
     );
   }
 
+
+  /* =========================================================
+     地图地点标识
+     
+     注意：
+     点击地图标识时：
+     只打开右侧详情。
+     不调用 focusLocation()。
+     不修改地图 x / y / scale。
+  ========================================================= */
+
   function renderMarkers() {
-    const group =
+
+    const g =
       document.getElementById(
         'mapMarkers'
       );
 
-    if (!group) {
+    if (!g) {
       return;
     }
 
-    group.innerHTML = '';
+    g.innerHTML = '';
+
 
     const year =
       WorldState.currentYear;
 
+
     const unlocked =
-      window.WorldData.locations.filter(
-        location =>
-          isActive(
-            location,
-            year
-          )
-      ).length;
+      window.WorldData.locations
+        .filter(
+          location =>
+            isActive(
+              location,
+              year
+            )
+        )
+        .length;
+
 
     window.WorldData.locations.forEach(
-      location => {
+      loc => {
+
+        /*
+         * 当前年份：
+         *   已出现 → 显示
+         *
+         * 未来：
+         *   显示，但标记 future
+         *
+         * 已结束：
+         *   显示，但标记 ended
+         *
+         * 其他情况：
+         *   不显示
+         */
+
+        if (
+          !isActive(loc, year) &&
+          !isFuture(loc, year) &&
+          !isEnded(loc, year)
+        ) {
+          return;
+        }
+
+
         const future =
           isFuture(
-            location,
+            loc,
             year
           );
 
         const ended =
           isEnded(
-            location,
+            loc,
             year
           );
-
-        /*
-         * 过滤异常状态。
-         */
-        if (
-          !isActive(
-            location,
-            year
-          ) &&
-          !future &&
-          !ended
-        ) {
-          return;
-        }
 
         const state =
           currentState(
-            location,
+            loc,
             year
           );
 
-        const marker =
+
+        /* -----------------------------------------------------
+           外层 SVG group
+        ----------------------------------------------------- */
+
+        const group =
           document.createElementNS(
             NS,
             'g'
           );
 
-        marker.classList.add(
+        group.classList.add(
           'marker'
         );
 
         if (future) {
-          marker.classList.add(
+          group.classList.add(
             'future'
           );
         }
 
         if (ended) {
-          marker.classList.add(
+          group.classList.add(
             'marker-ended'
           );
         }
 
-        marker.dataset.id =
-          location.id;
+        group.dataset.id =
+          loc.id;
 
-        marker.style.color =
+        group.style.color =
           state?.color ||
-          location.color;
+          loc.color;
 
-        /*
-         * 光晕。
-         */
+
+        /* -----------------------------------------------------
+           光晕
+        ----------------------------------------------------- */
+
         const halo =
           document.createElementNS(
             NS,
@@ -314,12 +334,12 @@ window.WorldMap = (() => {
 
         halo.setAttribute(
           'cx',
-          location.x
+          loc.x
         );
 
         halo.setAttribute(
           'cy',
-          location.y
+          loc.y
         );
 
         halo.setAttribute(
@@ -327,17 +347,20 @@ window.WorldMap = (() => {
           '10'
         );
 
-        marker.appendChild(
+        group.appendChild(
           halo
         );
 
-        /*
-         * 活跃地点脉冲。
-         */
+
+        /* -----------------------------------------------------
+           已出现地点的呼吸动画
+        ----------------------------------------------------- */
+
         if (
           !future &&
           !ended
         ) {
+
           const pulse =
             document.createElementNS(
               NS,
@@ -350,12 +373,12 @@ window.WorldMap = (() => {
 
           pulse.setAttribute(
             'cx',
-            location.x
+            loc.x
           );
 
           pulse.setAttribute(
             'cy',
-            location.y
+            loc.y
           );
 
           pulse.setAttribute(
@@ -363,14 +386,16 @@ window.WorldMap = (() => {
             '9'
           );
 
-          marker.appendChild(
+          group.appendChild(
             pulse
           );
         }
 
-        /*
-         * 地点主点。
-         */
+
+        /* -----------------------------------------------------
+           中心圆点
+        ----------------------------------------------------- */
+
         const dot =
           document.createElementNS(
             NS,
@@ -383,12 +408,12 @@ window.WorldMap = (() => {
 
         dot.setAttribute(
           'cx',
-          location.x
+          loc.x
         );
 
         dot.setAttribute(
           'cy',
-          location.y
+          loc.y
         );
 
         dot.setAttribute(
@@ -396,13 +421,15 @@ window.WorldMap = (() => {
           '6'
         );
 
-        marker.appendChild(
+        group.appendChild(
           dot
         );
 
-        /*
-         * 地点名称。
-         */
+
+        /* -----------------------------------------------------
+           地点名称
+        ----------------------------------------------------- */
+
         const text =
           document.createElementNS(
             NS,
@@ -411,25 +438,28 @@ window.WorldMap = (() => {
 
         text.setAttribute(
           'x',
-          location.x
+          loc.x
         );
 
         text.setAttribute(
           'y',
-          location.y - 14
+          loc.y - 14
         );
 
         text.textContent =
-          location.name;
+          loc.name;
 
-        marker.appendChild(
+        group.appendChild(
           text
         );
 
-        /*
-         * 当前地点状态。
-         */
+
+        /* -----------------------------------------------------
+           当前状态
+        ----------------------------------------------------- */
+
         if (state?.label) {
+
           const stateText =
             document.createElementNS(
               NS,
@@ -442,12 +472,12 @@ window.WorldMap = (() => {
 
           stateText.setAttribute(
             'x',
-            location.x
+            loc.x
           );
 
           stateText.setAttribute(
             'y',
-            location.y + 18
+            loc.y + 18
           );
 
           stateText.textContent =
@@ -455,104 +485,145 @@ window.WorldMap = (() => {
               ? '未开放'
               : state.label;
 
-          marker.appendChild(
+          group.appendChild(
             stateText
           );
         }
 
-        /*
-         * 地图地点点击。
-         */
-        marker.addEventListener(
+
+        /* =====================================================
+           地图标识点击
+           
+           核心修改：
+           
+           不再：
+             WorldMap.focusLocation(loc.id)
+           
+           不再：
+             修改 WorldState.map.x
+             修改 WorldState.map.y
+             修改 WorldState.map.scale
+           
+           只：
+             1. 打开当前地点详情
+             2. 保持地图当前位置
+        ===================================================== */
+
+        group.addEventListener(
           'click',
           event => {
+
+            event.preventDefault();
             event.stopPropagation();
 
+
+            /* 未开放地点 */
             if (future) {
+
               showToast(
-                `“${location.name}”将在天启${WorldUtils.toCN(location.startYear)}年开放`
+                `“${loc.name}”将在天启${WorldUtils.toCN(loc.startYear)}年开放`
               );
 
               return;
             }
 
+
             /*
-             * 所有选中状态统一交给 WorldState。
+             * 记录当前选中地点
+             */
+            WorldState.selectedLocationId =
+              loc.id;
+
+
+            /*
+             * 打开右侧详情
+             *
+             * WorldState.select()
+             * 会触发 SidebarUI 的 selection 监听。
+             *
+             * 注意：
+             * 这里绝对不调用 focusLocation()。
              */
             WorldState.select(
               'location',
-              location.id
+              loc.id
             );
 
+
             /*
-             * 点击后将地点移动到地图中心。
+             * 如果 state.js / sidebar.js
+             * 仍然兼容旧的 openLocation 事件，
+             * 保留事件即可。
+             *
+             * 事件本身不会改变地图位置。
              */
-            focusLocation(
-              location.id
+            WorldState.emit(
+              'openLocation'
             );
+
           }
         );
 
-        group.appendChild(
-          marker
+
+        g.appendChild(
+          group
         );
+
       }
     );
 
-    /*
-     * 更新统计。
-     */
-    const statUnlocked =
-      document.getElementById(
-        'statUnlocked'
-      );
 
-    if (statUnlocked) {
-      statUnlocked.replaceChildren(
+    /* ---------------------------------------------------------
+       顶部统计
+    --------------------------------------------------------- */
+
+    document
+      .getElementById(
+        'statUnlocked'
+      )
+      ?.replaceChildren(
         document.createTextNode(
           String(unlocked)
         )
       );
-    }
 
-    /*
-     * 更新资源页描述。
-     */
+
+    /* ---------------------------------------------------------
+       资源页隐藏描述
+    --------------------------------------------------------- */
+
     const resourceDesc =
       document.getElementById(
         'resourcePageDesc'
       );
 
     if (resourceDesc) {
-      const resourceCount =
-        window.WorldData.locations
+
+      resourceDesc.textContent =
+        `天启${WorldUtils.toCN(year)}年 · 已出现地点 ${unlocked}/${window.WorldData.locations.length} · 资源 ${window.WorldData.locations
           .filter(
-            location =>
+            x =>
               isActive(
-                location,
+                x,
                 year
               )
           )
           .reduce(
-            (count, location) =>
-              count +
-              (
-                location.res || []
-              ).length,
+            (total, x) =>
+              total +
+              (x.res?.length || 0),
             0
-          );
-
-      resourceDesc.textContent =
-        `天启${WorldUtils.toCN(year)}年 · 已出现地点 ${unlocked}/${window.WorldData.locations.length} · 资源 ${resourceCount} 项`;
+          )} 项`;
     }
-
-    /*
-     * 渲染完成后同步选中状态。
-     */
-    syncSelectionVisuals();
   }
 
+
+  /* =========================================================
+     应用地图变换
+  ========================================================= */
+
   function applyTransform() {
+
     const map =
       WorldState.map;
 
@@ -569,7 +640,20 @@ window.WorldMap = (() => {
       `translate(${map.x}px,${map.y}px) scale(${map.scale})`;
   }
 
+
+  /* =========================================================
+     地图适配屏幕
+     
+     只在：
+     - 初始化
+     - 浏览器窗口 resize
+     - 用户点击“重置”
+     
+     时调用。
+  ========================================================= */
+
   function fitToScreen() {
+
     const bg =
       document.getElementById(
         'mapBg'
@@ -579,11 +663,13 @@ window.WorldMap = (() => {
       return;
     }
 
+
     const scale =
       Math.min(
         bg.clientWidth / VIEW_W,
         bg.clientHeight / VIEW_H
       );
+
 
     WorldState.map.scale =
       scale;
@@ -600,14 +686,21 @@ window.WorldMap = (() => {
         VIEW_H * scale
       ) / 2;
 
+
     applyTransform();
   }
+
+
+  /* =========================================================
+     指定位置缩放
+  ========================================================= */
 
   function zoomAtPoint(
     factor,
     px,
     py
   ) {
+
     const map =
       WorldState.map;
 
@@ -621,37 +714,47 @@ window.WorldMap = (() => {
         map.maxScale
       );
 
+
     if (
       newScale === oldScale
     ) {
       return;
     }
 
-    const mx =
+
+    const mapX =
       (px - map.x) /
       oldScale;
 
-    const my =
+    const mapY =
       (py - map.y) /
       oldScale;
+
 
     map.scale =
       newScale;
 
     map.x =
       px -
-      mx * newScale;
+      mapX * newScale;
 
     map.y =
       py -
-      my * newScale;
+      mapY * newScale;
+
 
     applyTransform();
   }
 
+
+  /* =========================================================
+     屏幕中心缩放
+  ========================================================= */
+
   function zoomCenter(
     factor
   ) {
+
     const bg =
       document.getElementById(
         'mapBg'
@@ -660,6 +763,7 @@ window.WorldMap = (() => {
     if (!bg) {
       return;
     }
+
 
     zoomAtPoint(
       factor,
@@ -668,12 +772,19 @@ window.WorldMap = (() => {
     );
   }
 
+
+  /* =========================================================
+     地图初始化
+  ========================================================= */
+
   function init() {
+
     renderRegions();
 
     renderMarkers();
 
     fitToScreen();
+
 
     const bg =
       document.getElementById(
@@ -684,12 +795,19 @@ window.WorldMap = (() => {
       return;
     }
 
-    /*
-     * 地图拖拽。
-     */
+
+    /* -------------------------------------------------------
+       地图拖动
+    ------------------------------------------------------- */
+
     bg.addEventListener(
       'pointerdown',
       event => {
+
+        /*
+         * 点击地图标识时，
+         * 不启动地图拖动。
+         */
         if (
           event.target.closest(
             '.marker'
@@ -698,6 +816,7 @@ window.WorldMap = (() => {
           return;
         }
 
+
         if (
           event.pointerType === 'mouse' &&
           event.button !== 0
@@ -705,7 +824,9 @@ window.WorldMap = (() => {
           return;
         }
 
-        isDragging = true;
+
+        isDragging =
+          true;
 
         dragStartX =
           event.clientX;
@@ -719,22 +840,32 @@ window.WorldMap = (() => {
         startY =
           WorldState.map.y;
 
+
         bg.classList.add(
           'dragging'
         );
 
+
         bg.setPointerCapture?.(
           event.pointerId
         );
+
       }
     );
+
+
+    /* -------------------------------------------------------
+       地图拖动过程
+    ------------------------------------------------------- */
 
     bg.addEventListener(
       'pointermove',
       event => {
+
         if (!isDragging) {
           return;
         }
+
 
         WorldState.map.x =
           startX +
@@ -746,17 +877,27 @@ window.WorldMap = (() => {
           event.clientY -
           dragStartY;
 
+
         applyTransform();
       }
     );
 
-    const stopDragging = () => {
-      isDragging = false;
 
-      bg.classList.remove(
-        'dragging'
-      );
-    };
+    /* -------------------------------------------------------
+       停止拖动
+    ------------------------------------------------------- */
+
+    const stopDragging =
+      () => {
+
+        isDragging =
+          false;
+
+        bg.classList.remove(
+          'dragging'
+        );
+      };
+
 
     bg.addEventListener(
       'pointerup',
@@ -768,125 +909,157 @@ window.WorldMap = (() => {
       stopDragging
     );
 
-    /*
-     * 鼠标滚轮缩放。
-     */
+
+    /* -------------------------------------------------------
+       滚轮缩放
+    ------------------------------------------------------- */
+
     bg.addEventListener(
       'wheel',
       event => {
+
         event.preventDefault();
+
 
         const rect =
           bg.getBoundingClientRect();
+
 
         zoomAtPoint(
           event.deltaY > 0
             ? 0.9
             : 1.1,
+
           event.clientX -
             rect.left,
+
           event.clientY -
             rect.top
         );
+
       },
       {
         passive: false
       }
     );
 
-    /*
-     * 放大。
-     */
-    const zoomIn =
+
+    /* -------------------------------------------------------
+       顶部工具栏
+    ------------------------------------------------------- */
+
+    const zoomInBtn =
       document.getElementById(
         'zoomInBtn'
       );
 
-    if (zoomIn) {
-      zoomIn.addEventListener(
+    if (zoomInBtn) {
+
+      zoomInBtn.addEventListener(
         'click',
-        () => {
-          zoomCenter(1.25);
-        }
+        () => zoomCenter(1.25)
       );
+
     }
 
-    /*
-     * 缩小。
-     */
-    const zoomOut =
+
+    const zoomOutBtn =
       document.getElementById(
         'zoomOutBtn'
       );
 
-    if (zoomOut) {
-      zoomOut.addEventListener(
+    if (zoomOutBtn) {
+
+      zoomOutBtn.addEventListener(
         'click',
-        () => {
-          zoomCenter(
-            1 / 1.25
-          );
-        }
+        () => zoomCenter(
+          1 / 1.25
+        )
       );
+
     }
 
-    /*
-     * 重置。
-     */
-    const reset =
+
+    const resetViewBtn =
       document.getElementById(
         'resetViewBtn'
       );
 
-    if (reset) {
-      reset.addEventListener(
+    if (resetViewBtn) {
+
+      resetViewBtn.addEventListener(
         'click',
         fitToScreen
       );
+
     }
+
+
+    /* -------------------------------------------------------
+       窗口大小改变
+       
+       注意：
+       这里会重新适配地图。
+       点击地图标识不会触发 resize。
+    ------------------------------------------------------- */
 
     window.addEventListener(
       'resize',
       fitToScreen
     );
 
-    /*
-     * 时间轴改变。
-     */
+
+    /* -------------------------------------------------------
+       时间轴变化
+    ------------------------------------------------------- */
+
     WorldState.on(
       reason => {
+
         if (
           reason === 'year'
         ) {
+
           renderMarkers();
 
-          return;
         }
 
-        /*
-         * 选中状态变化。
-         */
-        if (
-          reason === 'selection' ||
-          reason ===
-            'selectionClear'
-        ) {
-          syncSelectionVisuals();
-        }
       }
     );
   }
 
-  function focusLocation(id) {
-    const location =
+
+  /* =========================================================
+     主动定位地点
+     
+     注意：
+     这个函数仍然保留，
+     但“点击地图标识”不会调用它。
+     
+     后续如果你需要：
+       - 搜索地点并定位
+       - 点击某个外部导航自动定位
+       - “前往地点”按钮
+     
+     可以单独调用：
+     
+       WorldMap.focusLocation('m1')
+  ========================================================= */
+
+  function focusLocation(
+    id
+  ) {
+
+    const loc =
       window.WorldData.locations.find(
-        item =>
-          item.id === id
+        x =>
+          x.id === id
       );
 
-    if (!location) {
+    if (!loc) {
       return;
     }
+
 
     const bg =
       document.getElementById(
@@ -897,65 +1070,93 @@ window.WorldMap = (() => {
       return;
     }
 
+
     const targetScale =
       1.45;
+
 
     WorldState.map.scale =
       targetScale;
 
     WorldState.map.x =
       bg.clientWidth / 2 -
-      location.x *
-        targetScale;
+      loc.x * targetScale;
 
     WorldState.map.y =
       bg.clientHeight / 2 -
-      location.y *
-        targetScale;
+      loc.y * targetScale;
+
 
     applyTransform();
 
+
     /*
-     * 移除旧高亮。
+     * 临时高亮定位地点
      */
     document
       .querySelectorAll(
-        '.marker.map-highlight'
+        '.marker'
       )
-      .forEach(marker => {
-        marker.classList.remove(
-          'map-highlight'
-        );
-      });
+      .forEach(
+        marker =>
+          marker.classList.remove(
+            'map-highlight'
+          )
+      );
+
 
     const marker =
       document.querySelector(
         `.marker[data-id="${id}"]`
       );
 
-    if (marker) {
-      marker.classList.add(
-        'map-highlight'
-      );
 
-      setTimeout(() => {
-        marker.classList.remove(
+    marker?.classList.add(
+      'map-highlight'
+    );
+
+
+    setTimeout(
+      () => {
+
+        marker?.classList.remove(
           'map-highlight'
         );
-      }, 2200);
-    }
+
+      },
+      2200
+    );
   }
 
+
+  /* =========================================================
+     对外接口
+  ========================================================= */
+
   return {
+
     init,
+
     renderMarkers,
+
     fitToScreen,
+
     zoomCenter,
+
+    /*
+     * 保留主动定位接口，
+     * 但地图标识点击不会自动调用。
+     */
     focusLocation,
+
     isActive,
+
     isFuture,
+
     isEnded,
-    currentState,
-    syncSelectionVisuals
+
+    currentState
+
   };
+
 })();
