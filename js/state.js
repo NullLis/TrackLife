@@ -1,1 +1,23 @@
-
+window.WorldState = {
+  currentYear:7,
+  currentTab:'map',
+  tabsCollapsed:false,
+  selectedLocationId:null,
+  selectedEntity:null,
+  detailSubTab:'overview',
+  resourceFilter:'active',
+  map:{x:0,y:0,scale:1,minScale:.35,maxScale:3},
+  listeners:[],
+  setYear(year){
+    this.currentYear=Math.max(1,Math.min(7,Number(year)||1));
+    this.emit('year');
+  },
+  select(type,id,subTab='overview'){
+    this.selectedEntity={type,id};
+    this.detailSubTab=subTab;
+    this.emit('selection');
+  },
+  clearSelection(){this.selectedEntity=null;this.selectedLocationId=null;this.emit('selectionClear');},
+  on(listener){this.listeners.push(listener);},
+  emit(reason){this.listeners.forEach(fn=>{try{fn(reason,this);}catch(err){console.error(err);}});}
+};
