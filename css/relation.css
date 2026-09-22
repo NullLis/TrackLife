@@ -4,6 +4,12 @@
   align-items:center;
   gap:20px;
   padding-top:8px;
+
+  /*
+   * 移除关系图容器边框与阴影
+   */
+  border:none;
+  box-shadow:none;
 }
 
 
@@ -19,7 +25,14 @@
 
   background:rgba(15,20,26,.35);
 
-  border:1px solid var(--border);
+  /*
+   * 移除人物关系图 / 势力关系图边框
+   */
+  border:none !important;
+
+  /*
+   * 保留原来的圆角
+   */
   border-radius:14px;
 
   padding:10px 0;
@@ -51,9 +64,11 @@
 }
 
 
-/* 鼠标悬停 */
+/*
+ * 鼠标悬停时不再显示边框变化。
+ */
 .graph-large-svg:hover{
-  border-color:rgba(212,167,106,.22);
+  border:none !important;
 }
 
 
