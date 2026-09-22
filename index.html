@@ -4,225 +4,997 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>世界地图 · 世界编年史</title>
+
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/map.css">
   <link rel="stylesheet" href="css/relation.css">
   <link rel="stylesheet" href="css/timeline.css">
 </head>
+
 <body data-tab="map">
 
+  <!-- =========================================================
+       世界地图
+  ========================================================== -->
+
   <main id="mapBg" aria-label="世界地图画布">
+
     <div id="mapViewport">
-      <svg id="worldSvg" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg">
+
+      <svg
+        id="worldSvg"
+        viewBox="0 0 1200 760"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+
         <defs>
-          <radialGradient id="oceanGrad" cx="50%" cy="50%" r="75%">
-            <stop offset="0%" stop-color="#131a24" />
-            <stop offset="100%" stop-color="#0b0f15" />
+
+          <!-- 海洋渐变 -->
+          <radialGradient
+            id="oceanGrad"
+            cx="50%"
+            cy="50%"
+            r="75%"
+          >
+            <stop
+              offset="0%"
+              stop-color="#131a24"
+            />
+            <stop
+              offset="100%"
+              stop-color="#0b0f15"
+            />
           </radialGradient>
-          <linearGradient id="landNorth" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#2a3340" />
-            <stop offset="100%" stop-color="#1e2531" />
+
+          <!-- 北部区域 -->
+          <linearGradient
+            id="landNorth"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop
+              offset="0%"
+              stop-color="#2a3340"
+            />
+            <stop
+              offset="100%"
+              stop-color="#1e2531"
+            />
           </linearGradient>
-          <linearGradient id="landCentral" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#2e3a35" />
-            <stop offset="100%" stop-color="#212a28" />
+
+          <!-- 中央区域 -->
+          <linearGradient
+            id="landCentral"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop
+              offset="0%"
+              stop-color="#2e3a35"
+            />
+            <stop
+              offset="100%"
+              stop-color="#212a28"
+            />
           </linearGradient>
-          <linearGradient id="landWest" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#33301f" />
-            <stop offset="100%" stop-color="#25231a" />
+
+          <!-- 西部区域 -->
+          <linearGradient
+            id="landWest"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop
+              offset="0%"
+              stop-color="#33301f"
+            />
+            <stop
+              offset="100%"
+              stop-color="#25231a"
+            />
           </linearGradient>
-          <linearGradient id="landEast" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#3a2328" />
-            <stop offset="100%" stop-color="#281a1e" />
+
+          <!-- 东部区域 -->
+          <linearGradient
+            id="landEast"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop
+              offset="0%"
+              stop-color="#3a2328"
+            />
+            <stop
+              offset="100%"
+              stop-color="#281a1e"
+            />
           </linearGradient>
-          <linearGradient id="landSouth" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#1f2d38" />
-            <stop offset="100%" stop-color="#172029" />
+
+          <!-- 南部区域 -->
+          <linearGradient
+            id="landSouth"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop
+              offset="0%"
+              stop-color="#1f2d38"
+            />
+            <stop
+              offset="100%"
+              stop-color="#172029"
+            />
           </linearGradient>
-          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+
+          <!-- 柔光 -->
+          <filter
+            id="softGlow"
+            x="-50%"
+            y="-50%"
+            width="200%"
+            height="200%"
+          >
+            <feGaussianBlur
+              stdDeviation="3"
+              result="blur"
+            />
+
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
           </filter>
+
         </defs>
 
-        <rect width="1200" height="760" fill="url(#oceanGrad)" />
 
-        <g class="map-grid" stroke="#1a222c" stroke-width="0.5" opacity="0.6">
-          <line x1="0" y1="190" x2="1200" y2="190" />
-          <line x1="0" y1="380" x2="1200" y2="380" />
-          <line x1="0" y1="570" x2="1200" y2="570" />
-          <line x1="300" y1="0" x2="300" y2="760" />
-          <line x1="600" y1="0" x2="600" y2="760" />
-          <line x1="900" y1="0" x2="900" y2="760" />
+        <!-- 海洋背景 -->
+        <rect
+          width="1200"
+          height="760"
+          fill="url(#oceanGrad)"
+        />
+
+
+        <!-- 地图网格 -->
+        <g
+          class="map-grid"
+          stroke="#1a222c"
+          stroke-width="0.5"
+          opacity="0.6"
+        >
+
+          <line
+            x1="0"
+            y1="190"
+            x2="1200"
+            y2="190"
+          />
+
+          <line
+            x1="0"
+            y1="380"
+            x2="1200"
+            y2="380"
+          />
+
+          <line
+            x1="0"
+            y1="570"
+            x2="1200"
+            y2="570"
+          />
+
+          <line
+            x1="300"
+            y1="0"
+            x2="300"
+            y2="760"
+          />
+
+          <line
+            x1="600"
+            y1="0"
+            x2="600"
+            y2="760"
+          />
+
+          <line
+            x1="900"
+            y1="0"
+            x2="900"
+            y2="760"
+          />
+
         </g>
 
+
+        <!-- 地区 -->
         <g id="mapRegions"></g>
 
-        <g stroke="#4a4530" stroke-width="1.2" fill="none" opacity="0.7">
+
+        <!-- 山脉 -->
+        <g
+          stroke="#4a4530"
+          stroke-width="1.2"
+          fill="none"
+          opacity="0.7"
+        >
+
           <path d="M 180,300 L 210,270 L 240,300" />
           <path d="M 240,310 L 270,275 L 300,310" />
           <path d="M 300,320 L 330,285 L 360,320" />
           <path d="M 200,350 L 230,320 L 260,350" />
           <path d="M 260,360 L 290,325 L 320,360" />
+
         </g>
 
-        <g stroke="#2a4a60" stroke-width="2" fill="none" opacity="0.75">
+
+        <!-- 河流 -->
+        <g
+          stroke="#2a4a60"
+          stroke-width="2"
+          fill="none"
+          opacity="0.75"
+        >
+
           <path d="M 560,240 Q 600,340 560,420 T 540,540" />
           <path d="M 540,540 Q 480,580 420,600" />
           <path d="M 700,320 Q 720,420 680,500" />
+
         </g>
 
-        <g fill="#2a3d35" opacity="0.5">
-          <circle cx="500" cy="300" r="4" /><circle cx="520" cy="315" r="4" />
-          <circle cx="540" cy="295" r="4" /><circle cx="560" cy="325" r="4" />
-          <circle cx="490" cy="340" r="4" /><circle cx="515" cy="355" r="4" />
+
+        <!-- 森林 / 地形点 -->
+        <g
+          fill="#2a3d35"
+          opacity="0.5"
+        >
+
+          <circle cx="500" cy="300" r="4" />
+          <circle cx="520" cy="315" r="4" />
+          <circle cx="540" cy="295" r="4" />
+          <circle cx="560" cy="325" r="4" />
+          <circle cx="490" cy="340" r="4" />
+          <circle cx="515" cy="355" r="4" />
+
         </g>
 
+
+        <!-- 地区名称 -->
         <g id="mapRegionLabels"></g>
+
+        <!-- 地图地点 -->
         <g id="mapMarkers"></g>
+
       </svg>
+
     </div>
+
   </main>
 
-  <section id="infoView" aria-hidden="true">
-    <button id="btnBackMap" class="btn-back-map" type="button" aria-label="返回地图">
-      <span class="arrow">←</span><span>返回地图</span>
+
+  <!-- =========================================================
+       全屏信息页面
+       
+       注意：
+       这里已经移除原来的 .iv-head。
+       页面标题统一由顶部 .topbar 显示。
+  ========================================================== -->
+
+  <section
+    id="infoView"
+    aria-hidden="true"
+  >
+
+    <!-- 返回地图 -->
+    <button
+      id="btnBackMap"
+      class="btn-back-map"
+      type="button"
+      aria-label="返回地图"
+    >
+      <span class="arrow">←</span>
+      <span>返回地图</span>
     </button>
+
+
     <div class="info-view-pages">
-      <section class="info-view-page active" id="iv-resource">
-        <div class="iv-head">
-          <div class="iv-title">地点资源</div>
-          <div class="iv-desc" id="resourcePageDesc">按当前时间线查看已出现地点与资源。</div>
-        </div>
+
+
+      <!-- =====================================================
+           地点资源
+      ====================================================== -->
+
+      <section
+        class="info-view-page active"
+        id="iv-resource"
+      >
+
+        <!-- 资源筛选 -->
         <div class="resource-toolbar">
-          <button class="filter-btn active" data-resource-filter="active">已出现</button>
-          <button class="filter-btn" data-resource-filter="all">全部</button>
+
+          <button
+            class="filter-btn active"
+            data-resource-filter="active"
+            type="button"
+          >
+            已出现
+          </button>
+
+          <button
+            class="filter-btn"
+            data-resource-filter="all"
+            type="button"
+          >
+            全部
+          </button>
+
         </div>
-        <div class="resource-grid" id="resourceGrid"></div>
+
+
+        <!-- 资源卡片 -->
+        <div
+          class="resource-grid"
+          id="resourceGrid"
+        ></div>
+
+
+        <!--
+          保留给现有 JS 使用。
+
+          不显示第二个顶部模块，
+          但保留这些 ID 可以避免旧代码
+          document.getElementById(...) 返回 null。
+        -->
+        <span
+          id="resourcePageDesc"
+          hidden
+        ></span>
+
       </section>
 
-      <section class="info-view-page" id="iv-faction">
-        <div class="iv-head">
-          <div class="iv-title">势力关系</div>
-          <div class="iv-desc" id="factionPageDesc">点击势力节点，在右侧查看详细档案。</div>
-        </div>
+
+
+      <!-- =====================================================
+           势力关系
+      ====================================================== -->
+
+      <section
+        class="info-view-page"
+        id="iv-faction"
+      >
+
         <div class="graph-large-wrap">
-          <svg class="graph-large-svg" viewBox="0 0 300 240" aria-label="势力关系图">
+
+          <!-- 势力关系图 -->
+          <svg
+            class="graph-large-svg"
+            viewBox="0 0 300 240"
+            aria-label="势力关系图"
+          >
+
             <g id="factionEdges"></g>
             <g id="factionNodes"></g>
+
           </svg>
+
+
+          <!-- 势力图例 -->
           <div class="graph-legend">
-            <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#d4a76a"></span>正道</div>
-            <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#d46a6a"></span>魔道</div>
-            <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#a78bda"></span>朝廷</div>
-            <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#6ad48a"></span>中立</div>
+
+            <div class="graph-legend-item">
+
+              <span
+                class="graph-legend-dot"
+                style="background:#d4a76a"
+              ></span>
+
+              正道
+
+            </div>
+
+
+            <div class="graph-legend-item">
+
+              <span
+                class="graph-legend-dot"
+                style="background:#d46a6a"
+              ></span>
+
+              魔道
+
+            </div>
+
+
+            <div class="graph-legend-item">
+
+              <span
+                class="graph-legend-dot"
+                style="background:#a78bda"
+              ></span>
+
+              朝廷
+
+            </div>
+
+
+            <div class="graph-legend-item">
+
+              <span
+                class="graph-legend-dot"
+                style="background:#6ad48a"
+              ></span>
+
+              中立
+
+            </div>
+
           </div>
+
         </div>
+
+
+        <!-- 保留给 JS 使用 -->
+        <span
+          id="factionPageDesc"
+          hidden
+        ></span>
+
       </section>
 
-      <section class="info-view-page" id="iv-relation">
-        <div class="iv-head">
-          <div class="iv-title">人物关系</div>
-          <div class="iv-desc" id="relationPageDesc">点击人物节点，在右侧查看详细档案。</div>
-        </div>
+
+
+      <!-- =====================================================
+           人物关系
+      ====================================================== -->
+
+      <section
+        class="info-view-page"
+        id="iv-relation"
+      >
+
         <div class="graph-large-wrap">
-          <svg class="graph-large-svg" viewBox="0 0 300 240" aria-label="人物关系图">
+
+          <!-- 人物关系图 -->
+          <svg
+            class="graph-large-svg"
+            viewBox="0 0 300 240"
+            aria-label="人物关系图"
+          >
+
             <g id="relationEdges"></g>
             <g id="relationNodes"></g>
+
           </svg>
+
+
+          <!-- 人物关系图例 -->
           <div class="graph-legend">
-            <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#d4a76a"></span>主角</div>
-            <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#6ba3d4"></span>友方</div>
-            <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#d46a6a"></span>敌对</div>
-            <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#a78bda"></span>师门</div>
+
+            <div class="graph-legend-item">
+
+              <span
+                class="graph-legend-dot"
+                style="background:#d4a76a"
+              ></span>
+
+              主角
+
+            </div>
+
+
+            <div class="graph-legend-item">
+
+              <span
+                class="graph-legend-dot"
+                style="background:#6ba3d4"
+              ></span>
+
+              友方
+
+            </div>
+
+
+            <div class="graph-legend-item">
+
+              <span
+                class="graph-legend-dot"
+                style="background:#d46a6a"
+              ></span>
+
+              敌对
+
+            </div>
+
+
+            <div class="graph-legend-item">
+
+              <span
+                class="graph-legend-dot"
+                style="background:#a78bda"
+              ></span>
+
+              师门
+
+            </div>
+
           </div>
+
         </div>
+
+
+        <!-- 保留给 JS 使用 -->
+        <span
+          id="relationPageDesc"
+          hidden
+        ></span>
+
       </section>
+
     </div>
+
   </section>
 
+
+
+  <!-- =========================================================
+       全局浮层
+  ========================================================== -->
+
   <div id="overlayLayer">
+
+
+    <!-- =======================================================
+         唯一顶部模块
+    ======================================================== -->
+
     <header class="topbar">
+
       <div class="logo">
-        <div class="logo-mark">墨</div>
-        <div class="logo-text" id="topbarTitle">世界地图</div>
+
+        <div class="logo-mark">
+          墨
+        </div>
+
+        <div
+          class="logo-text"
+          id="topbarTitle"
+        >
+          世界地图
+        </div>
+
       </div>
+
+
       <div class="topbar-divider"></div>
-      <div class="page-desc" id="topbarDesc"></div>
-      <div class="topbar-stats" id="topbarStats"></div>
-      <div class="topbar-right" id="topbarTools">
-        <button class="btn-tool" id="zoomInBtn" type="button"><span>＋</span><span class="tool-text">放大</span></button>
-        <button class="btn-tool" id="zoomOutBtn" type="button"><span>－</span><span class="tool-text">缩小</span></button>
-        <button class="btn-tool" id="resetViewBtn" type="button"><span>⟲</span><span class="tool-text">重置</span></button>
+
+
+      <div
+        class="page-desc"
+        id="topbarDesc"
+      ></div>
+
+
+      <div
+        class="topbar-stats"
+        id="topbarStats"
+      ></div>
+
+
+      <div
+        class="topbar-right"
+        id="topbarTools"
+      >
+
+        <button
+          class="btn-tool"
+          id="zoomInBtn"
+          type="button"
+        >
+          <span>＋</span>
+          <span class="tool-text">放大</span>
+        </button>
+
+
+        <button
+          class="btn-tool"
+          id="zoomOutBtn"
+          type="button"
+        >
+          <span>－</span>
+          <span class="tool-text">缩小</span>
+        </button>
+
+
+        <button
+          class="btn-tool"
+          id="resetViewBtn"
+          type="button"
+        >
+          <span>⟲</span>
+          <span class="tool-text">重置</span>
+        </button>
+
       </div>
+
     </header>
 
-    <nav class="tabs-wrapper" id="tabsWrapper" aria-label="信息导航">
-      <button class="tabs-toggle" id="tabsToggle" type="button" title="收起/展开标签"><span class="arrow">◀</span></button>
+
+
+    <!-- =======================================================
+         左侧导航
+    ======================================================== -->
+
+    <nav
+      class="tabs-wrapper"
+      id="tabsWrapper"
+      aria-label="信息导航"
+    >
+
+      <button
+        class="tabs-toggle"
+        id="tabsToggle"
+        type="button"
+        title="收起/展开标签"
+      >
+        <span class="arrow">
+          ◀
+        </span>
+      </button>
+
+
       <div class="info-tabs-side">
-        <button class="info-tab active" data-tab="map" type="button"><span class="info-tab-icon">🌐</span><span class="info-tab-label">世界地图</span></button>
+
+        <!-- 世界地图 -->
+        <button
+          class="info-tab active"
+          data-tab="map"
+          type="button"
+        >
+          <span class="info-tab-icon">
+            🌐
+          </span>
+
+          <span class="info-tab-label">
+            世界地图
+          </span>
+        </button>
+
+
         <div class="tabs-divider"></div>
-        <button class="info-tab" data-tab="resource" type="button"><span class="info-tab-icon">◆</span><span class="info-tab-label">地点资源</span></button>
-        <button class="info-tab" data-tab="faction" type="button"><span class="info-tab-icon">⬢</span><span class="info-tab-label">势力关系</span></button>
-        <button class="info-tab" data-tab="relation" type="button"><span class="info-tab-icon">◉</span><span class="info-tab-label">人物关系</span></button>
+
+
+        <!-- 地点资源 -->
+        <button
+          class="info-tab"
+          data-tab="resource"
+          type="button"
+        >
+          <span class="info-tab-icon">
+            ◆
+          </span>
+
+          <span class="info-tab-label">
+            地点资源
+          </span>
+        </button>
+
+
+        <!-- 势力关系 -->
+        <button
+          class="info-tab"
+          data-tab="faction"
+          type="button"
+        >
+          <span class="info-tab-icon">
+            ⬢
+          </span>
+
+          <span class="info-tab-label">
+            势力关系
+          </span>
+        </button>
+
+
+        <!-- 人物关系 -->
+        <button
+          class="info-tab"
+          data-tab="relation"
+          type="button"
+        >
+          <span class="info-tab-icon">
+            ◉
+          </span>
+
+          <span class="info-tab-label">
+            人物关系
+          </span>
+        </button>
+
       </div>
+
     </nav>
 
-    <aside class="map-sidebar collapsed" id="mapSidebar" aria-label="右侧详情">
-      <button class="sidebar-handle" id="sidebarHandle" type="button" title="收起/展开右侧信息">
-        <span class="sidebar-handle-icon">◈</span><span class="sidebar-handle-arrow">▶</span>
+
+
+    <!-- =======================================================
+         右侧详情面板
+    ======================================================== -->
+
+    <aside
+      class="map-sidebar collapsed"
+      id="mapSidebar"
+      aria-label="右侧详情"
+    >
+
+      <button
+        class="sidebar-handle"
+        id="sidebarHandle"
+        type="button"
+        title="收起/展开右侧信息"
+      >
+
+        <span class="sidebar-handle-icon">
+          ◈
+        </span>
+
+        <span class="sidebar-handle-arrow">
+          ▶
+        </span>
+
       </button>
+
+
       <div id="sidebarContent"></div>
+
     </aside>
 
-    <div class="map-legend" id="mapLegend">
-      <div class="legend-item"><span class="legend-dot" style="background:#d4a76a"></span>主城</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#6ba3d4"></span>门派</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#6ad48a"></span>秘境</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#d46a6a"></span>禁地</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#a78bda"></span>要塞</div>
+
+
+    <!-- =======================================================
+         地图图例
+    ======================================================== -->
+
+    <div
+      class="map-legend"
+      id="mapLegend"
+    >
+
+      <div class="legend-item">
+
+        <span
+          class="legend-dot"
+          style="background:#d4a76a"
+        ></span>
+
+        主城
+
+      </div>
+
+
+      <div class="legend-item">
+
+        <span
+          class="legend-dot"
+          style="background:#6ba3d4"
+        ></span>
+
+        门派
+
+      </div>
+
+
+      <div class="legend-item">
+
+        <span
+          class="legend-dot"
+          style="background:#6ad48a"
+        ></span>
+
+        秘境
+
+      </div>
+
+
+      <div class="legend-item">
+
+        <span
+          class="legend-dot"
+          style="background:#d46a6a"
+        ></span>
+
+        禁地
+
+      </div>
+
+
+      <div class="legend-item">
+
+        <span
+          class="legend-dot"
+          style="background:#a78bda"
+        ></span>
+
+        要塞
+
+      </div>
+
     </div>
 
-    <section class="map-timeline" aria-label="时间轴">
+
+
+    <!-- =======================================================
+         时间轴
+    ======================================================== -->
+
+    <section
+      class="map-timeline"
+      aria-label="时间轴"
+    >
+
       <div class="map-timeline-head">
-        <span class="map-timeline-label">时间进度</span>
-        <strong class="map-timeline-year" id="timelineYear">天启七年</strong>
+
+        <span class="map-timeline-label">
+          时间进度
+        </span>
+
+        <strong
+          class="map-timeline-year"
+          id="timelineYear"
+        >
+          天启七年
+        </strong>
+
       </div>
-      <div class="timeline-events" id="timelineEvents"></div>
+
+
+      <!-- 时间轴事件 -->
+      <div
+        class="timeline-events"
+        id="timelineEvents"
+      ></div>
+
+
+      <!-- 时间轴轨道 -->
       <div class="map-timeline-track">
+
         <div class="map-timeline-rail"></div>
-        <div class="map-timeline-fill" id="timelineFill"></div>
-        <input class="map-timeline-range" id="timelineRange" type="range" min="1" max="7" value="7" step="1" aria-label="当前年份">
-        <div class="map-timeline-ticks" id="timelineTicks">
-          <button type="button" data-year="1">元年</button>
-          <button type="button" data-year="2">二年</button>
-          <button type="button" data-year="3">三年</button>
-          <button type="button" data-year="4">四年</button>
-          <button type="button" data-year="5">五年</button>
-          <button type="button" data-year="6">六年</button>
-          <button type="button" data-year="7">七年</button>
+
+        <div
+          class="map-timeline-fill"
+          id="timelineFill"
+        ></div>
+
+
+        <input
+          class="map-timeline-range"
+          id="timelineRange"
+          type="range"
+          min="1"
+          max="7"
+          value="7"
+          step="1"
+          aria-label="当前年份"
+        />
+
+
+        <div
+          class="map-timeline-ticks"
+          id="timelineTicks"
+        >
+
+          <button
+            type="button"
+            data-year="1"
+          >
+            元年
+          </button>
+
+          <button
+            type="button"
+            data-year="2"
+          >
+            二年
+          </button>
+
+          <button
+            type="button"
+            data-year="3"
+          >
+            三年
+          </button>
+
+          <button
+            type="button"
+            data-year="4"
+          >
+            四年
+          </button>
+
+          <button
+            type="button"
+            data-year="5"
+          >
+            五年
+          </button>
+
+          <button
+            type="button"
+            data-year="6"
+          >
+            六年
+          </button>
+
+          <button
+            type="button"
+            data-year="7"
+          >
+            七年
+          </button>
+
         </div>
+
       </div>
-      <div class="map-timeline-stat" id="timelineStats"></div>
+
+
+      <!-- 时间轴统计 -->
+      <div
+        class="map-timeline-stat"
+        id="timelineStats"
+      ></div>
+
     </section>
+
   </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+
+  <!-- =========================================================
+       Toast
+  ========================================================== -->
+
+  <div
+    id="toast"
+    class="toast"
+    role="status"
+    aria-live="polite"
+  ></div>
+
+
+
+  <!-- =========================================================
+       JS
+  ========================================================== -->
 
   <script src="js/utils.js"></script>
+
   <script src="js/state.js"></script>
+
   <script src="data/regions.js"></script>
   <script src="data/locations.js"></script>
   <script src="data/factions.js"></script>
   <script src="data/characters.js"></script>
   <script src="data/relations.js"></script>
   <script src="data/events.js"></script>
+
   <script src="js/map.js"></script>
   <script src="js/relation.js"></script>
   <script src="js/sidebar.js"></script>
   <script src="js/timeline.js"></script>
   <script src="js/tabs.js"></script>
   <script src="js/app.js"></script>
+
 </body>
 </html>
