@@ -12,7 +12,7 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     面板打开
+     打开右侧详情
   ========================================================= */
 
   function open() {
@@ -29,23 +29,24 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     面板关闭
+     关闭右侧详情
      
-     注意：
-     关闭详情时同时清除当前选择。
+     重要：
+     这里只清除“详情实体”的选中状态。
      
-     不主动 renderWorldOverview()，
-     避免：
+     不允许直接：
      
-       close
-       ↓
-       selectionClear
-       ↓
-       renderWorldOverview
-       ↓
-       open
+       .querySelectorAll('.active')
      
-     形成重新打开的循环。
+     因为 .active 同时被以下 UI 使用：
+     
+       .info-tab.active
+       .filter-btn.active
+       .detail-tab.active
+       .timeline-event.active
+       .resource-card.active
+     
+     否则关闭详情时会把整个页面的导航状态一起清掉。
   ========================================================= */
 
   function close() {
@@ -56,12 +57,19 @@ window.SidebarUI = (() => {
       return;
     }
 
+
+    /* ---------------------------------------------------------
+       收起面板
+    --------------------------------------------------------- */
+
     el.classList.remove('open');
     el.classList.add('collapsed');
 
-    /*
-     * 使用 WorldState 的统一状态接口。
-     */
+
+    /* ---------------------------------------------------------
+       清除统一选中状态
+    --------------------------------------------------------- */
+
     if (
       window.WorldState &&
       typeof WorldState.clearSelection === 'function'
@@ -72,7 +80,7 @@ window.SidebarUI = (() => {
     } else {
 
       /*
-       * 兼容旧版本 WorldState。
+       * 兼容旧版本状态系统。
        */
       WorldState.selectedEntity = null;
       WorldState.selectedLocationId = null;
@@ -80,31 +88,58 @@ window.SidebarUI = (() => {
     }
 
 
-    /*
-     * 清除所有视觉选中状态。
-     *
-     * 注意：
-     * 这里不清除关系图的缩放 / 平移状态。
-     */
+    /* ---------------------------------------------------------
+       只清理详情实体状态
+       
+       千万不要使用：
+       
+         '.selected, .active'
+       
+       那会把整个页面其它 active 全部清掉。
+    --------------------------------------------------------- */
+
     document
       .querySelectorAll(
-        '.selected, .active'
+        '.marker.selected, ' +
+        '.rel-node.selected, ' +
+        '.resource-card.active'
       )
       .forEach(
-        element =>
+        element => {
+
           element.classList.remove(
             'selected',
             'active'
-          )
+          );
+
+        }
       );
+
+
+    /*
+     * 重新同步关系图选中状态。
+     *
+     * 这里不改变关系图缩放和平移。
+     */
+    if (
+      window.RelationUI &&
+      typeof RelationUI.syncSelectionVisuals === 'function'
+    ) {
+
+      RelationUI.syncSelectionVisuals();
+
+    }
   }
 
 
   /* =========================================================
-     实体查找
+     根据类型获取实体
   ========================================================= */
 
-  function entity(type, id) {
+  function entity(
+    type,
+    id
+  ) {
 
     if (
       type === 'location'
@@ -159,7 +194,7 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     当前状态
+     当前实体状态
   ========================================================= */
 
   function stateFor(
@@ -174,7 +209,7 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     相关地点
+     根据实体类型获取相关地点
   ========================================================= */
 
   function relatedLocationIdsForEntity(
@@ -205,7 +240,7 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     根据当前选择渲染
+     渲染当前选择
   ========================================================= */
 
   function renderSelected() {
@@ -215,16 +250,26 @@ window.SidebarUI = (() => {
 
 
     /*
-     * 没有选择实体：
-     * 不主动打开世界概览。
+     * 没有选中实体时：
      *
-     * 防止：
-     * 点击空白关闭面板时又重新打开。
+     * 不重新打开世界概览。
+     *
+     * 否则：
+     *
+     * 点击空白
+     * ↓
+     * close()
+     * ↓
+     * clearSelection()
+     * ↓
+     * renderWorldOverview()
+     * ↓
+     * 详情面板重新打开
+     *
+     * 会形成错误循环。
      */
     if (!selected) {
-
       return;
-
     }
 
 
@@ -236,9 +281,7 @@ window.SidebarUI = (() => {
 
 
     if (!item) {
-
       return;
-
     }
 
 
@@ -250,8 +293,8 @@ window.SidebarUI = (() => {
     ) {
 
       renderLocation(item);
-
       return;
+
     }
 
 
@@ -260,8 +303,8 @@ window.SidebarUI = (() => {
     ) {
 
       renderFaction(item);
-
       return;
+
     }
 
 
@@ -270,8 +313,8 @@ window.SidebarUI = (() => {
     ) {
 
       renderCharacter(item);
-
       return;
+
     }
 
 
@@ -280,17 +323,19 @@ window.SidebarUI = (() => {
     ) {
 
       renderEvent(item);
-
       return;
+
     }
   }
 
 
   /* =========================================================
-     详情页 Tab
+     详情页面 Tab 配置
   ========================================================= */
 
-  function tabs(type) {
+  function tabs(
+    type
+  ) {
 
     const maps = {
 
@@ -332,21 +377,25 @@ window.SidebarUI = (() => {
     return `
       <div class="detail-tabs">
 
-        ${list.map(
-          ([id, label]) => `
-            <button
-              type="button"
-              class="detail-tab ${
-                WorldState.detailSubTab === id
-                  ? 'active'
-                  : ''
-              }"
-              data-detail-tab="${id}"
-            >
-              ${label}
-            </button>
-          `
-        ).join('')}
+        ${
+          list
+            .map(
+              ([id, label]) => `
+                <button
+                  type="button"
+                  class="detail-tab ${
+                    WorldState.detailSubTab === id
+                      ? 'active'
+                      : ''
+                  }"
+                  data-detail-tab="${id}"
+                >
+                  ${label}
+                </button>
+              `
+            )
+            .join('')
+        }
 
       </div>
     `;
@@ -392,7 +441,9 @@ window.SidebarUI = (() => {
         <div class="content-page-kicker">
           ${String(type).toUpperCase()}
           PROFILE /
-          ${String(item.id || '').toUpperCase()}
+          ${String(
+            item.id || ''
+          ).toUpperCase()}
         </div>
 
 
@@ -406,9 +457,15 @@ window.SidebarUI = (() => {
 
 
             <div class="content-page-subtitle">
+
               天启${WorldUtils.toCN(
                 WorldState.currentYear
-              )}年 · ${subtitle}
+              )}年
+
+              ·
+
+              ${subtitle}
+
             </div>
 
           </div>
@@ -428,7 +485,9 @@ window.SidebarUI = (() => {
               )};
             "
           >
-            ${WorldUtils.escapeHtml(label)}
+            ${WorldUtils.escapeHtml(
+              label || ''
+            )}
           </div>
 
         </div>
@@ -439,7 +498,7 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     概览
+     概览内容
   ========================================================= */
 
   function overview(
@@ -472,9 +531,10 @@ window.SidebarUI = (() => {
                 )}
               </div>
 
+
               <div class="content-page-card-value">
                 ${WorldUtils.escapeHtml(
-                  value
+                  String(value)
                 )}
               </div>
 
@@ -539,6 +599,7 @@ window.SidebarUI = (() => {
       ${
         cards
           ? `
+
             <div class="content-page-section">
 
               <div class="content-page-section-title">
@@ -547,10 +608,13 @@ window.SidebarUI = (() => {
 
 
               <div class="content-page-grid">
+
                 ${cards}
+
               </div>
 
             </div>
+
           `
           : ''
       }
@@ -560,7 +624,7 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     创建详情页面
+     创建详情页面外壳
   ========================================================= */
 
   function renderShell(
@@ -614,7 +678,7 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     详情 Tab 点击
+     详情 Tab 事件
   ========================================================= */
 
   function wireTabs() {
@@ -634,9 +698,6 @@ window.SidebarUI = (() => {
             'click',
             event => {
 
-              /*
-               * 阻止 document 全局点击事件。
-               */
               event.preventDefault();
               event.stopPropagation();
 
@@ -691,7 +752,10 @@ window.SidebarUI = (() => {
       WorldState.detailSubTab;
 
 
-    /* 概览 */
+    /* -------------------------------------------------------
+       概览
+    ------------------------------------------------------- */
+
     if (
       sub === 'overview'
     ) {
@@ -719,9 +783,11 @@ window.SidebarUI = (() => {
 
 
               <div class="content-page-card-value">
+
                 天启${WorldUtils.toCN(
                   location.startYear
                 )}年
+
               </div>
 
             </div>
@@ -732,10 +798,17 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 资源 */
+    /* -------------------------------------------------------
+       资源
+    ------------------------------------------------------- */
+
     if (
       sub === 'resources'
     ) {
+
+      const resources =
+        location.res || [];
+
 
       body.innerHTML = `
 
@@ -749,13 +822,15 @@ window.SidebarUI = (() => {
           <div class="content-page-list">
 
             ${
-              (location.res || [])
+              resources
                 .map(
                   resource => `
                     <span class="content-page-chip">
+
                       ${WorldUtils.escapeHtml(
                         resource
                       )}
+
                     </span>
                   `
                 )
@@ -778,7 +853,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 关系 */
+    /* -------------------------------------------------------
+       关系
+    ------------------------------------------------------- */
+
     if (
       sub === 'relations'
     ) {
@@ -790,7 +868,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 事件 */
+    /* -------------------------------------------------------
+       事件
+    ------------------------------------------------------- */
+
     if (
       sub === 'events'
     ) {
@@ -817,11 +898,13 @@ window.SidebarUI = (() => {
 
     const faction =
       location.factionId
+
         ? WorldData.factions.find(
             item =>
               item.id ===
               location.factionId
           )
+
         : null;
 
 
@@ -890,16 +973,20 @@ window.SidebarUI = (() => {
             characters
               .map(
                 character => `
+
                   <button
                     type="button"
                     class="content-page-chip"
                     data-nav-type="character"
                     data-nav-id="${character.id}"
                   >
+
                     ${WorldUtils.escapeHtml(
                       character.name
                     )}
+
                   </button>
+
                 `
               )
               .join('')
@@ -907,9 +994,11 @@ window.SidebarUI = (() => {
             ||
 
             `
+
               <span class="content-page-chip">
                 暂无人物
               </span>
+
             `
           }
 
@@ -947,7 +1036,10 @@ window.SidebarUI = (() => {
       WorldState.detailSubTab;
 
 
-    /* 概览 */
+    /* -------------------------------------------------------
+       概览
+    ------------------------------------------------------- */
+
     if (
       sub === 'overview'
     ) {
@@ -975,18 +1067,22 @@ window.SidebarUI = (() => {
                   color:${faction.color}
                 "
               >
+
                 ${WorldUtils.escapeHtml(
                   faction.category ||
                   ''
                 )}
+
               </span>
 
 
               <span class="content-page-chip">
+
                 ${WorldUtils.escapeHtml(
                   faction.role ||
                   ''
                 )}
+
               </span>
 
             </div>
@@ -997,7 +1093,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 关系 */
+    /* -------------------------------------------------------
+       关系
+    ------------------------------------------------------- */
+
     if (
       sub === 'relations'
     ) {
@@ -1009,7 +1108,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 领地 */
+    /* -------------------------------------------------------
+       领地
+    ------------------------------------------------------- */
+
     if (
       sub === 'territory'
     ) {
@@ -1021,7 +1123,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 事件 */
+    /* -------------------------------------------------------
+       事件
+    ------------------------------------------------------- */
+
     if (
       sub === 'events'
     ) {
@@ -1078,7 +1183,9 @@ window.SidebarUI = (() => {
                 const otherId =
                   relation.from ===
                   faction.id
+
                     ? relation.to
+
                     : relation.from;
 
 
@@ -1095,10 +1202,12 @@ window.SidebarUI = (() => {
                   <div class="content-page-stat-row">
 
                     <span class="content-page-stat-key">
+
                       ${WorldUtils.escapeHtml(
                         other?.name ||
                         otherId
                       )}
+
                     </span>
 
 
@@ -1111,10 +1220,12 @@ window.SidebarUI = (() => {
                         }
                       "
                     >
+
                       ${WorldUtils.escapeHtml(
                         relation.label ||
                         ''
                       )}
+
                     </span>
 
                   </div>
@@ -1127,9 +1238,11 @@ window.SidebarUI = (() => {
           ||
 
           `
+
             <div class="content-page-empty">
               当前没有生效关系。
             </div>
+
           `
         }
 
@@ -1150,12 +1263,15 @@ window.SidebarUI = (() => {
     const locations =
       WorldData.locations.filter(
         location =>
+
           (
             faction.territory ||
             []
           ).includes(
             location.id
-          ) &&
+          )
+
+          &&
 
           WorldMap.isActive(
             location,
@@ -1179,16 +1295,20 @@ window.SidebarUI = (() => {
             locations
               .map(
                 location => `
+
                   <button
                     type="button"
                     class="content-page-chip"
                     data-nav-type="location"
                     data-nav-id="${location.id}"
                   >
+
                     ${WorldUtils.escapeHtml(
                       location.name
                     )}
+
                   </button>
+
                 `
               )
               .join('')
@@ -1196,9 +1316,11 @@ window.SidebarUI = (() => {
             ||
 
             `
+
               <span class="content-page-chip">
                 当前无已解锁领地
               </span>
+
             `
           }
 
@@ -1236,7 +1358,10 @@ window.SidebarUI = (() => {
       WorldState.detailSubTab;
 
 
-    /* 概览 */
+    /* -------------------------------------------------------
+       概览
+    ------------------------------------------------------- */
+
     if (
       sub === 'overview'
     ) {
@@ -1249,7 +1374,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 关系 */
+    /* -------------------------------------------------------
+       关系
+    ------------------------------------------------------- */
+
     if (
       sub === 'relations'
     ) {
@@ -1261,7 +1389,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 地点 */
+    /* -------------------------------------------------------
+       地点
+    ------------------------------------------------------- */
+
     if (
       sub === 'locations'
     ) {
@@ -1281,8 +1412,10 @@ window.SidebarUI = (() => {
           .filter(Boolean)
           .filter(
             location =>
-              location.startYear <=
-              WorldState.currentYear
+              WorldMap.isActive(
+                location,
+                WorldState.currentYear
+              )
           );
 
 
@@ -1301,16 +1434,20 @@ window.SidebarUI = (() => {
               locations
                 .map(
                   location => `
+
                     <button
                       type="button"
                       class="content-page-chip"
                       data-nav-type="location"
                       data-nav-id="${location.id}"
                     >
+
                       ${WorldUtils.escapeHtml(
                         location.name
                       )}
+
                     </button>
+
                   `
                 )
                 .join('')
@@ -1318,9 +1455,11 @@ window.SidebarUI = (() => {
               ||
 
               `
+
                 <span class="content-page-chip">
                   当前没有已解锁地点
                 </span>
+
               `
             }
 
@@ -1332,7 +1471,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 事件 */
+    /* -------------------------------------------------------
+       事件
+    ------------------------------------------------------- */
+
     if (
       sub === 'events'
     ) {
@@ -1352,20 +1494,14 @@ window.SidebarUI = (() => {
   /* =========================================================
      人物关系
      
-     修正：
+     正确的关系筛选条件：
      
-       原本：
-       x.from === c.id || x.to === c.id && isActive
-     
-       实际优先级不正确。
-     
-       现在：
        (
-         x.from === c.id ||
-         x.to === c.id
+         relation.from === character.id ||
+         relation.to === character.id
        )
        &&
-       isActive
+       WorldMap.isActive(...)
   ========================================================= */
 
   function characterRelations(
@@ -1378,11 +1514,15 @@ window.SidebarUI = (() => {
 
           (
             relation.from ===
-            character.id ||
+            character.id
+
+            ||
 
             relation.to ===
             character.id
-          ) &&
+          )
+
+          &&
 
           WorldMap.isActive(
             relation,
@@ -1408,7 +1548,9 @@ window.SidebarUI = (() => {
                 const otherId =
                   relation.from ===
                   character.id
+
                     ? relation.to
+
                     : relation.from;
 
 
@@ -1425,10 +1567,12 @@ window.SidebarUI = (() => {
                   <div class="content-page-stat-row">
 
                     <span class="content-page-stat-key">
+
                       ${WorldUtils.escapeHtml(
                         other?.name ||
                         otherId
                       )}
+
                     </span>
 
 
@@ -1441,10 +1585,12 @@ window.SidebarUI = (() => {
                         }
                       "
                     >
+
                       ${WorldUtils.escapeHtml(
                         relation.label ||
                         ''
                       )}
+
                     </span>
 
                   </div>
@@ -1457,9 +1603,11 @@ window.SidebarUI = (() => {
           ||
 
           `
+
             <div class="content-page-empty">
               当前没有生效关系。
             </div>
+
           `
         }
 
@@ -1480,9 +1628,13 @@ window.SidebarUI = (() => {
 
     const key =
       type === 'location'
+
         ? 'locationIds'
+
         : type === 'faction'
+
           ? 'factionIds'
+
           : 'characterIds';
 
 
@@ -1511,10 +1663,11 @@ window.SidebarUI = (() => {
 
                 const ongoing =
                   event.start <=
-                  WorldState.currentYear &&
+                    WorldState.currentYear
+                  &&
 
                   event.end >=
-                  WorldState.currentYear;
+                    WorldState.currentYear;
 
 
                 const future =
@@ -1553,9 +1706,12 @@ window.SidebarUI = (() => {
                         }
                       "
                     >
+
                       ${WorldUtils.escapeHtml(
-                        event.name
+                        event.name ||
+                        ''
                       )}
+
                     </div>
 
 
@@ -1563,7 +1719,9 @@ window.SidebarUI = (() => {
 
                       天启${WorldUtils.toCN(
                         event.start
-                      )}年 —
+                      )}年
+
+                      —
 
                       天启${WorldUtils.toCN(
                         event.end
@@ -1595,9 +1753,11 @@ window.SidebarUI = (() => {
           ||
 
           `
+
             <div class="content-page-empty">
               暂无关联事件。
             </div>
+
           `
         }
 
@@ -1608,7 +1768,7 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     历史事件详情
+     事件详情
   ========================================================= */
 
   function renderEvent(
@@ -1620,7 +1780,7 @@ window.SidebarUI = (() => {
         event,
         'event',
         event.color ||
-        'var(--gold)',
+          'var(--gold)',
         '历史事件'
       );
 
@@ -1634,7 +1794,10 @@ window.SidebarUI = (() => {
       WorldState.detailSubTab;
 
 
-    /* 概览 */
+    /* -------------------------------------------------------
+       概览
+    ------------------------------------------------------- */
+
     if (
       sub === 'overview'
     ) {
@@ -1649,10 +1812,12 @@ window.SidebarUI = (() => {
 
 
           <div class="content-page-intro">
+
             ${WorldUtils.escapeHtml(
               event.desc ||
               ''
             )}
+
           </div>
 
         </div>
@@ -1671,9 +1836,11 @@ window.SidebarUI = (() => {
 
 
               <div class="content-page-card-value">
+
                 天启${WorldUtils.toCN(
                   event.start
                 )}年
+
               </div>
 
             </div>
@@ -1687,9 +1854,11 @@ window.SidebarUI = (() => {
 
 
               <div class="content-page-card-value">
+
                 天启${WorldUtils.toCN(
                   event.end
                 )}年
+
               </div>
 
             </div>
@@ -1702,7 +1871,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 地点 */
+    /* -------------------------------------------------------
+       地点
+    ------------------------------------------------------- */
+
     if (
       sub === 'locations'
     ) {
@@ -1716,7 +1888,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 人物 */
+    /* -------------------------------------------------------
+       人物
+    ------------------------------------------------------- */
+
     if (
       sub === 'characters'
     ) {
@@ -1730,7 +1905,10 @@ window.SidebarUI = (() => {
     }
 
 
-    /* 势力 */
+    /* -------------------------------------------------------
+       势力
+    ------------------------------------------------------- */
+
     if (
       sub === 'factions'
     ) {
@@ -1749,7 +1927,7 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     实体跳转列表
+     实体链接
   ========================================================= */
 
   function entityLinks(
@@ -1775,9 +1953,11 @@ window.SidebarUI = (() => {
       <div class="content-page-section">
 
         <div class="content-page-section-title">
+
           ${WorldUtils.escapeHtml(
             title
           )}
+
         </div>
 
 
@@ -1787,16 +1967,20 @@ window.SidebarUI = (() => {
             list
               .map(
                 item => `
+
                   <button
                     type="button"
                     class="content-page-chip"
                     data-nav-type="${type}"
                     data-nav-id="${item.id}"
                   >
+
                     ${WorldUtils.escapeHtml(
                       item.name
                     )}
+
                   </button>
+
                 `
               )
               .join('')
@@ -1804,9 +1988,11 @@ window.SidebarUI = (() => {
             ||
 
             `
+
               <span class="content-page-chip">
                 无
               </span>
+
             `
           }
 
@@ -1821,9 +2007,9 @@ window.SidebarUI = (() => {
   /* =========================================================
      世界概览
      
-     保留这个函数供初始化调用。
+     仅用于初始化内容。
      
-     但是在 close() 时不会自动调用。
+     关闭面板时不会自动重新显示。
   ========================================================= */
 
   function renderWorldOverview() {
@@ -1929,7 +2115,11 @@ window.SidebarUI = (() => {
                           WorldState.currentYear
                         )
                     ).length
-                  }/${WorldData.locations.length}
+                  }
+
+                  /
+
+                  ${WorldData.locations.length}
 
                 </div>
 
@@ -1953,7 +2143,11 @@ window.SidebarUI = (() => {
                           WorldState.currentYear
                         )
                     ).length
-                  }/${WorldData.characters.length}
+                  }
+
+                  /
+
+                  ${WorldData.characters.length}
 
                 </div>
 
@@ -1977,7 +2171,11 @@ window.SidebarUI = (() => {
                           WorldState.currentYear
                         )
                     ).length
-                  }/${WorldData.factions.length}
+                  }
+
+                  /
+
+                  ${WorldData.factions.length}
 
                 </div>
 
@@ -1997,10 +2195,11 @@ window.SidebarUI = (() => {
                     WorldData.events.filter(
                       event =>
                         event.start <=
-                        WorldState.currentYear &&
+                          WorldState.currentYear
+                        &&
 
                         event.end >=
-                        WorldState.currentYear
+                          WorldState.currentYear
                     ).length
                   }
 
@@ -2040,13 +2239,13 @@ window.SidebarUI = (() => {
 
 
   /* =========================================================
-     文档级导航
+     文档级实体导航
      
-     处理：
-       - 详情中的地点
-       - 详情中的人物
-       - 详情中的势力
-       - 详情中的事件
+     用于详情里面的：
+     
+       data-nav-type="location"
+       data-nav-type="faction"
+       data-nav-type="character"
   ========================================================= */
 
   document.addEventListener(
@@ -2065,7 +2264,7 @@ window.SidebarUI = (() => {
 
 
       /* -------------------------------------------------------
-         实体导航
+         详情内部实体导航
       ------------------------------------------------------- */
 
       const nav =
@@ -2083,6 +2282,7 @@ window.SidebarUI = (() => {
         const type =
           nav.dataset.navType;
 
+
         const id =
           nav.dataset.navId;
 
@@ -2091,12 +2291,20 @@ window.SidebarUI = (() => {
           !type ||
           !id
         ) {
+
           return;
+
         }
 
 
         /*
-         * 通过统一状态系统打开目标详情。
+         * 使用统一选择状态。
+         *
+         * 注意：
+         * 不调用 WorldMap.focusLocation()。
+         *
+         * 所以从详情内部点击“相关地点”时，
+         * 地图不会被强制移动到中心。
          */
         WorldState.select(
           type,
@@ -2104,24 +2312,12 @@ window.SidebarUI = (() => {
         );
 
 
-        /*
-         * 注意：
-         *
-         * 这里不再对 location 自动调用
-         * WorldMap.focusLocation()。
-         *
-         * 这样从：
-         *
-         * 地点详情 -> 相关地点
-         *
-         * 跳转时也不会把地图强制移动到屏幕中心。
-         */
         return;
       }
 
 
       /* -------------------------------------------------------
-         事件导航
+         事件跳转
       ------------------------------------------------------- */
 
       const eventTarget =
@@ -2156,7 +2352,7 @@ window.SidebarUI = (() => {
 
 
       /* -------------------------------------------------------
-         没有打开详情面板
+         获取详情面板
       ------------------------------------------------------- */
 
       const currentSidebar =
@@ -2173,13 +2369,16 @@ window.SidebarUI = (() => {
           'open'
         )
       ) {
+
         return;
+
       }
 
 
       /* -------------------------------------------------------
-         点击右侧详情面板内部
-         不关闭
+         点击详情面板内部
+         
+         不关闭。
       ------------------------------------------------------- */
 
       if (
@@ -2187,15 +2386,24 @@ window.SidebarUI = (() => {
           '#mapSidebar'
         )
       ) {
+
         return;
+
       }
 
 
       /* -------------------------------------------------------
-         以下都是“可交互区域”
+         保持打开的交互区域
          
-         点击这些区域时：
-         保持详情面板打开。
+         这里非常重要：
+         
+         graph-large-svg / graph-large-wrap
+         
+         是人物关系、势力关系的可拖动、
+         可缩放区域。
+         
+         点击或拖动它们时不能触发
+         右侧详情关闭。
       ------------------------------------------------------- */
 
       const keepOpen =
@@ -2233,16 +2441,18 @@ window.SidebarUI = (() => {
 
 
       if (keepOpen) {
+
         return;
+
       }
 
 
       /* -------------------------------------------------------
-         点击其他区域 = 空白区域
-         收起详情面板
+         其他位置视为空白区域
          
-         但是：
-         不切换当前资源 / 势力 / 人物页面。
+         收起详情。
+         
+         当前资源 / 势力 / 人物页面保持不变。
       ------------------------------------------------------- */
 
       close();
@@ -2258,15 +2468,15 @@ window.SidebarUI = (() => {
 
   function init() {
 
+    /* -------------------------------------------------------
+       右侧面板手柄
+    ------------------------------------------------------- */
+
     const handle =
       document.getElementById(
         'sidebarHandle'
       );
 
-
-    /* -------------------------------------------------------
-       侧边栏手柄
-    ------------------------------------------------------- */
 
     if (handle) {
 
@@ -2298,11 +2508,8 @@ window.SidebarUI = (() => {
           } else {
 
             /*
-             * 手动打开手柄时：
-             * 如果存在当前选择，则重新显示当前详情。
-             *
-             * 如果没有选择，则只打开空面板，
-             * 不自动制造一个世界概览选择。
+             * 如果当前有选择，
+             * 重新打开当前实体详情。
              */
             if (
               WorldState.selectedEntity
@@ -2325,9 +2532,9 @@ window.SidebarUI = (() => {
 
 
     /* -------------------------------------------------------
-       初始内容
+       初始化内容
        
-       只渲染，不保持打开状态。
+       只创建内容，不让面板保持打开。
     ------------------------------------------------------- */
 
     renderWorldOverview();
@@ -2336,16 +2543,16 @@ window.SidebarUI = (() => {
 
 
     /* -------------------------------------------------------
-       状态监听
+       WorldState 监听
     ------------------------------------------------------- */
 
     WorldState.on(
       reason => {
 
-        /*
-         * 选择实体：
-         * 打开对应详情。
-         */
+        /* ---------------------------------------------------
+           新选择
+        --------------------------------------------------- */
+
         if (
           reason === 'selection'
         ) {
@@ -2356,11 +2563,10 @@ window.SidebarUI = (() => {
         }
 
 
-        /*
-         * 兼容地图旧事件。
-         *
-         * 只有存在选中实体时才渲染。
-         */
+        /* ---------------------------------------------------
+           兼容地图地点旧事件
+        --------------------------------------------------- */
+
         if (
           reason === 'openLocation'
         ) {
@@ -2377,15 +2583,16 @@ window.SidebarUI = (() => {
         }
 
 
-        /*
-         * 年份变化：
-         *
-         * 如果当前已经打开某个详情，
-         * 根据新的年份刷新详情。
-         *
-         * 如果当前没有选择，
-         * 什么都不做。
-         */
+        /* ---------------------------------------------------
+           时间轴变化
+           
+           当前有实体详情：
+             更新详情
+           
+           没有实体详情：
+             不重新打开任何东西。
+        --------------------------------------------------- */
+
         if (
           reason === 'year'
         ) {
@@ -2402,11 +2609,14 @@ window.SidebarUI = (() => {
         }
 
 
-        /*
-         * selectionClear 故意不重新渲染世界概览。
-         *
-         * 否则关闭面板后会立即重新打开。
-         */
+        /* ---------------------------------------------------
+           selectionClear
+           
+           故意什么都不做。
+           
+           close() 已经负责收起。
+        --------------------------------------------------- */
+
         if (
           reason === 'selectionClear'
         ) {
