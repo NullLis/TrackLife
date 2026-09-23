@@ -5,12 +5,6 @@ window.RelationUI = (() => {
 
   /* ============================================================
      关系图设计尺寸
-
-     原始数据坐标大约：
-       X：44 ~ 256
-       Y：44 ~ 216
-
-     将 X 横向放大，让关系图更适合全屏宽屏显示。
   ============================================================ */
 
   const DESIGN_W = 420;
@@ -19,27 +13,31 @@ window.RelationUI = (() => {
   const SOURCE_W = 300;
   const SOURCE_H = 240;
 
-  const X_SCALE = DESIGN_W / SOURCE_W;
+  /*
+   * 将原始 300 宽的数据扩展到 420 宽。
+   */
+  const X_SCALE =
+    DESIGN_W /
+    SOURCE_W;
 
 
   /*
    * 初始显示比例。
    *
-   * 1.00 = 完整设计区域
-   * 1.08 = 稍微放大
+   * 1.08 = 比完整画布稍微放大。
    */
   const INITIAL_ZOOM = 1.08;
 
 
   /*
-   * 鼠标滚轮缩放范围。
+   * 滚轮缩放范围。
    */
   const MIN_ZOOM = 0.45;
   const MAX_ZOOM = 3.8;
 
 
   /*
-   * 数据坐标中心。
+   * 设计中心。
    */
   const CENTER_X =
     DESIGN_W / 2;
@@ -49,7 +47,7 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     图状态
+     每一张关系图独立保存自己的状态
   ============================================================ */
 
   const graphStates = {
@@ -141,7 +139,7 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     当前年份状态
+     当前时间是否生效
   ============================================================ */
 
   function active(item) {
@@ -155,12 +153,17 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     当前状态文字
+     获取当前人物 / 势力状态
   ============================================================ */
 
   function getCurrentStatus(item) {
 
-    if (!item || !Array.isArray(item.statuses)) {
+    if (
+      !item ||
+      !Array.isArray(
+        item.statuses
+      )
+    ) {
 
       return '';
 
@@ -170,8 +173,11 @@ window.RelationUI = (() => {
     const current =
       item.statuses.find(
         status =>
-          WorldState.currentYear >= status.from &&
-          WorldState.currentYear <= status.to
+          WorldState.currentYear >=
+            status.from
+          &&
+          WorldState.currentYear <=
+            status.to
       );
 
 
@@ -181,14 +187,19 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     数据坐标 -> 关系图坐标
+     原始数据坐标 -> 关系图坐标
   ============================================================ */
 
   function graphX(x) {
 
-    return CENTER_X +
-      (x - SOURCE_W / 2) *
-      X_SCALE;
+    return (
+      CENTER_X +
+      (
+        x -
+        SOURCE_W / 2
+      ) *
+      X_SCALE
+    );
 
   }
 
@@ -215,7 +226,7 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     获取 SVG
+     获取关系图 SVG
   ============================================================ */
 
   function getGraphSvg(state) {
@@ -230,7 +241,7 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     获取 SVG 尺寸
+     获取 SVG 当前实际比例
   ============================================================ */
 
   function getSvgAspect(state) {
@@ -241,7 +252,10 @@ window.RelationUI = (() => {
 
     if (!svg) {
 
-      return DESIGN_W / DESIGN_H;
+      return (
+        DESIGN_W /
+        DESIGN_H
+      );
 
     }
 
@@ -255,7 +269,10 @@ window.RelationUI = (() => {
       rect.height <= 0
     ) {
 
-      return DESIGN_W / DESIGN_H;
+      return (
+        DESIGN_W /
+        DESIGN_H
+      );
 
     }
 
@@ -269,15 +286,7 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     根据浏览器实际比例计算初始 ViewBox
-     
-     这样：
-       16:9
-       16:10
-       4:3
-       手机竖屏
-     
-     都不会因为 SVG 比例不同产生严重变形。
+     根据页面比例计算基础 ViewBox
   ============================================================ */
 
   function calculateBaseView(state) {
@@ -305,7 +314,7 @@ window.RelationUI = (() => {
 
       /*
        * 屏幕更宽：
-       * 增加可视世界宽度。
+       * 增加横向可视区域。
        */
       baseH =
         DESIGN_H;
@@ -318,7 +327,7 @@ window.RelationUI = (() => {
 
       /*
        * 屏幕更高：
-       * 增加可视世界高度。
+       * 增加纵向可视区域。
        */
       baseW =
         DESIGN_W;
@@ -340,24 +349,20 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     限制 ViewBox
+     ViewBox 拖动边界
 
-     重点：
-     ------------------------------------------------------------
-     旧版本的问题：
+     注意：
 
-       if(viewW >= WORLD_W)
-         viewX = center
+     旧逻辑：
 
-     导致缩小后完全不能拖。
+       viewW >= WORLD_W
+       ↓
+       强制居中
 
-     现在允许：
-       放大时拖
-       默认比例拖
-       缩小时拖
-       超出设计区域后继续拖
+     会导致缩小之后无法继续拖动。
 
-     同时设置合理的拖动余量。
+     新逻辑：
+       所有比例都允许移动。
   ============================================================ */
 
   function clampRange(
@@ -367,8 +372,7 @@ window.RelationUI = (() => {
   ) {
 
     /*
-     * 缩放后仍然是正常视野：
-     * viewSize < worldSize
+     * 正常放大状态。
      */
     if (
       viewSize <
@@ -387,6 +391,7 @@ window.RelationUI = (() => {
 
       return Math.max(
         -margin,
+
         Math.min(
           worldSize -
             viewSize +
@@ -400,17 +405,18 @@ window.RelationUI = (() => {
 
 
     /*
-     * 缩小到整个设计区域
-     * 都装进 ViewBox 后，
+     * ViewBox 大于设计区域：
      * 仍然允许拖动。
      */
     const extra =
       Math.max(
         40,
+
         (
           viewSize -
           worldSize
-        ) * 0.65
+        ) *
+        0.65
       );
 
 
@@ -465,11 +471,14 @@ window.RelationUI = (() => {
     }
 
 
-    clampView(state);
+    clampView(
+      state
+    );
 
 
     svg.setAttribute(
       'viewBox',
+
       [
         state.viewX,
         state.viewY,
@@ -482,7 +491,7 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     初始视图 / 重置视图
+     重置视图
   ============================================================ */
 
   function resetGraphView(
@@ -500,7 +509,9 @@ window.RelationUI = (() => {
     }
 
 
-    calculateBaseView(state);
+    calculateBaseView(
+      state
+    );
 
 
     const zoom =
@@ -518,7 +529,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 始终以设计中心为中心。
+     * 以整个关系图中心作为默认中心。
      */
     state.viewX =
       CENTER_X -
@@ -537,13 +548,15 @@ window.RelationUI = (() => {
       false;
 
 
-    applyViewBox(state);
+    applyViewBox(
+      state
+    );
 
   }
 
 
   /* ============================================================
-     鼠标 / 触摸坐标转换
+     屏幕坐标 -> ViewBox 世界坐标
   ============================================================ */
 
   function clientToWorld(
@@ -553,14 +566,19 @@ window.RelationUI = (() => {
   ) {
 
     const svg =
-      getGraphSvg(state);
+      getGraphSvg(
+        state
+      );
 
 
     if (!svg) {
 
       return {
+
         x:CENTER_X,
+
         y:CENTER_Y
+
       };
 
     }
@@ -568,6 +586,22 @@ window.RelationUI = (() => {
 
     const rect =
       svg.getBoundingClientRect();
+
+
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0
+    ) {
+
+      return {
+
+        x:CENTER_X,
+
+        y:CENTER_Y
+
+      };
+
+    }
 
 
     const px =
@@ -615,7 +649,9 @@ window.RelationUI = (() => {
   ) {
 
     const oldZoom =
-      currentZoom(state);
+      currentZoom(
+        state
+      );
 
 
     const newZoom =
@@ -662,7 +698,9 @@ window.RelationUI = (() => {
 
 
     const svg =
-      getGraphSvg(state);
+      getGraphSvg(
+        state
+      );
 
 
     if (!svg) {
@@ -674,6 +712,16 @@ window.RelationUI = (() => {
 
     const rect =
       svg.getBoundingClientRect();
+
+
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0
+    ) {
+
+      return;
+
+    }
 
 
     const px =
@@ -701,7 +749,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 保持鼠标所在位置不跳动。
+     * 缩放时保持鼠标对应世界坐标不跳动。
      */
     state.viewX =
       point.x -
@@ -719,7 +767,9 @@ window.RelationUI = (() => {
       true;
 
 
-    applyViewBox(state);
+    applyViewBox(
+      state
+    );
 
   }
 
@@ -735,7 +785,9 @@ window.RelationUI = (() => {
   ) {
 
     const svg =
-      getGraphSvg(state);
+      getGraphSvg(
+        state
+      );
 
 
     if (!svg) {
@@ -749,6 +801,16 @@ window.RelationUI = (() => {
       svg.getBoundingClientRect();
 
 
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0
+    ) {
+
+      return;
+
+    }
+
+
     const dx =
       clientX -
       state.startClientX;
@@ -760,8 +822,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 3px 阈值：
-     * 防止普通点击被识别成拖动。
+     * 超过 3px 才认为是真正拖动。
      */
     if (
       !state.moved &&
@@ -781,18 +842,14 @@ window.RelationUI = (() => {
 
 
     const worldDX =
-      (
-        dx /
-        rect.width
-      ) *
+      dx /
+      rect.width *
       state.viewW;
 
 
     const worldDY =
-      (
-        dy /
-        rect.height
-      ) *
+      dy /
+      rect.height *
       state.viewH;
 
 
@@ -810,13 +867,15 @@ window.RelationUI = (() => {
       true;
 
 
-    applyViewBox(state);
+    applyViewBox(
+      state
+    );
 
   }
 
 
   /* ============================================================
-     图交互绑定
+     绑定关系图交互
   ============================================================ */
 
   function bindGraphInteraction(
@@ -826,7 +885,9 @@ window.RelationUI = (() => {
 
     const svg =
       document
-        .getElementById(svgId)
+        .getElementById(
+          svgId
+        )
         ?.closest('svg');
 
 
@@ -837,8 +898,12 @@ window.RelationUI = (() => {
     }
 
 
+    /*
+     * 防止重复绑定。
+     */
     if (
-      svg.dataset.graphInteractionBound === '1'
+      svg.dataset.graphInteractionBound ===
+      '1'
     ) {
 
       return;
@@ -855,7 +920,9 @@ window.RelationUI = (() => {
     );
 
 
-    applyViewBox(state);
+    applyViewBox(
+      state
+    );
 
 
     /* ----------------------------------------------------------
@@ -870,7 +937,8 @@ window.RelationUI = (() => {
          * 鼠标只接受左键。
          */
         if (
-          event.pointerType === 'mouse' &&
+          event.pointerType ===
+            'mouse' &&
           event.button !== 0
         ) {
 
@@ -978,7 +1046,7 @@ window.RelationUI = (() => {
         ) {
 
           /*
-           * 拖动后禁止短时间 click。
+           * 拖动结束后短时间禁止 click。
            */
           state.suppressClickUntil =
             performance.now() +
@@ -1036,11 +1104,14 @@ window.RelationUI = (() => {
         state.dragging =
           false;
 
+
         state.pointerId =
           null;
 
+
         state.moved =
           false;
+
 
         svg.classList.remove(
           'graph-pan-active'
@@ -1059,7 +1130,6 @@ window.RelationUI = (() => {
       event => {
 
         event.preventDefault();
-
         event.stopPropagation();
 
 
@@ -1084,7 +1154,7 @@ window.RelationUI = (() => {
 
 
     /* ----------------------------------------------------------
-       双击重置
+       Double Click Reset
     ---------------------------------------------------------- */
 
     svg.addEventListener(
@@ -1111,7 +1181,7 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     创建 SVG 文字标签
+     创建节点标签
   ============================================================ */
 
   function createNodeLabel(
@@ -1145,7 +1215,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 中文字符宽度估算。
+     * 名称底板宽度。
      */
     const nameWidth =
       Math.max(
@@ -1156,10 +1226,15 @@ window.RelationUI = (() => {
       );
 
 
+    /*
+     * 状态文字底板宽度。
+     */
     const roleWidth =
       Math.max(
         54,
-        String(role).length *
+        String(
+          role
+        ).length *
           7 +
           20
       );
@@ -1173,8 +1248,11 @@ window.RelationUI = (() => {
 
 
     /*
-     * 标签整体底板。
+     * --------------------------------------------------------
+     * 标签背景
+     * --------------------------------------------------------
      */
+
     const plate =
       document.createElementNS(
         NS,
@@ -1224,8 +1302,11 @@ window.RelationUI = (() => {
 
 
     /*
-     * 人物 / 势力名称。
+     * --------------------------------------------------------
+     * 名称
+     * --------------------------------------------------------
      */
+
     const nameText =
       document.createElementNS(
         NS,
@@ -1260,8 +1341,11 @@ window.RelationUI = (() => {
 
 
     /*
-     * 身份 / 当前状态。
+     * --------------------------------------------------------
+     * 身份 / 当前状态
+     * --------------------------------------------------------
      */
+
     const roleText =
       document.createElementNS(
         NS,
@@ -1296,7 +1380,105 @@ window.RelationUI = (() => {
 
 
     /*
-     * 根据人物 / 势力添加 class。
+     * --------------------------------------------------------
+     * 真实点击区域
+     *
+     * 这是这次修复的关键。
+     *
+     * 原来的文字和背景：
+     * pointer-events:none
+     *
+     * 用户点击文字时，
+     * 浏览器很容易无法命中真正的 .rel-node。
+     *
+     * 现在创建一个透明矩形覆盖：
+     *
+     *   节点
+     *   名称
+     *   状态
+     *
+     * 全部可以点击。
+     * --------------------------------------------------------
+     */
+
+    const hit =
+      document.createElementNS(
+        NS,
+        'rect'
+      );
+
+
+    hit.classList.add(
+      'rel-hit'
+    );
+
+
+    hit.setAttribute(
+      'x',
+      node.x -
+        labelWidth / 2 -
+        10
+    );
+
+
+    hit.setAttribute(
+      'y',
+      node.y -
+        17
+    );
+
+
+    hit.setAttribute(
+      'width',
+      labelWidth +
+        20
+    );
+
+
+    hit.setAttribute(
+      'height',
+      68
+    );
+
+
+    hit.setAttribute(
+      'rx',
+      9
+    );
+
+
+    hit.setAttribute(
+      'fill',
+      '#000000'
+    );
+
+
+    hit.setAttribute(
+      'fill-opacity',
+      '0.001'
+    );
+
+
+    hit.setAttribute(
+      'stroke',
+      'none'
+    );
+
+
+    /*
+     * 放在 g 的最前面。
+     *
+     * 后面的视觉元素不接收 pointer，
+     * 所以这个透明区域始终可以命中。
+     */
+    g.insertBefore(
+      hit,
+      g.firstChild
+    );
+
+
+    /*
+     * 区分人物 / 势力。
      */
     g.classList.add(
       isCharacter
@@ -1342,26 +1524,38 @@ window.RelationUI = (() => {
 
 
     const svg =
-      edgesBox.closest('svg');
+      edgesBox.closest(
+        'svg'
+      );
 
 
     const state =
-      nodesId === 'factionNodes'
+      nodesId ===
+        'factionNodes'
         ? graphStates.faction
         : graphStates.character;
 
 
     const isCharacter =
-      nodesId === 'relationNodes';
+      nodesId ===
+      'relationNodes';
 
 
+    /*
+     * 当前年份重新绘制内容，
+     * 但是不重置视图。
+     */
     edgesBox.innerHTML =
       '';
+
 
     nodesBox.innerHTML =
       '';
 
 
+    /*
+     * 建立节点查询表。
+     */
     const nodeMap =
       Object.fromEntries(
         nodes.map(
@@ -1373,19 +1567,23 @@ window.RelationUI = (() => {
       );
 
 
-    /* ----------------------------------------------------------
-       关系线
-    ---------------------------------------------------------- */
+    /* ==========================================================
+       绘制关系线
+    ========================================================== */
 
     edges.forEach(
       edge => {
 
         const a =
-          nodeMap[edge.from];
+          nodeMap[
+            edge.from
+          ];
 
 
         const b =
-          nodeMap[edge.to];
+          nodeMap[
+            edge.to
+          ];
 
 
         if (
@@ -1399,19 +1597,27 @@ window.RelationUI = (() => {
 
 
         const ax =
-          graphX(a.x);
+          graphX(
+            a.x
+          );
 
 
         const ay =
-          graphY(a.y);
+          graphY(
+            a.y
+          );
 
 
         const bx =
-          graphX(b.x);
+          graphX(
+            b.x
+          );
 
 
         const by =
-          graphY(b.y);
+          graphY(
+            b.y
+          );
 
 
         const dx =
@@ -1437,9 +1643,6 @@ window.RelationUI = (() => {
           dy / len;
 
 
-        /*
-         * 节点外边缘。
-         */
         const nodeRadius =
           isCharacter
             ? 13
@@ -1482,6 +1685,9 @@ window.RelationUI = (() => {
         );
 
 
+        /*
+         * 尚未开始的关系。
+         */
         if (
           WorldState.currentYear <
           edge.startYear
@@ -1494,6 +1700,9 @@ window.RelationUI = (() => {
         }
 
 
+        /*
+         * 已结束关系。
+         */
         if (
           edge.endYear &&
           WorldState.currentYear >
@@ -1540,6 +1749,7 @@ window.RelationUI = (() => {
 
         line.setAttribute(
           'stroke-width',
+
           isCharacter
             ? '1.5'
             : '1.8'
@@ -1570,7 +1780,7 @@ window.RelationUI = (() => {
 
 
         /*
-         * 关系文字。
+         * 关系标签。
          */
         if (
           edge.label
@@ -1590,13 +1800,20 @@ window.RelationUI = (() => {
 
           label.setAttribute(
             'x',
-            (x1 + x2) / 2
+            (
+              x1 +
+              x2
+            ) / 2
           );
 
 
           label.setAttribute(
             'y',
-            (y1 + y2) / 2 - 4
+            (
+              y1 +
+              y2
+            ) / 2 -
+            4
           );
 
 
@@ -1614,19 +1831,23 @@ window.RelationUI = (() => {
     );
 
 
-    /* ----------------------------------------------------------
-       节点
-    ---------------------------------------------------------- */
+    /* ==========================================================
+       绘制节点
+    ========================================================== */
 
     nodes.forEach(
       node => {
 
         const x =
-          graphX(node.x);
+          graphX(
+            node.x
+          );
 
 
         const y =
-          graphY(node.y);
+          graphY(
+            node.y
+          );
 
 
         const future =
@@ -1687,9 +1908,9 @@ window.RelationUI = (() => {
 
 
         /*
-         * ------------------------------------------------------
-         * 外层光晕
-         * ------------------------------------------------------
+         * ======================================================
+           光晕
+         * ======================================================
          */
 
         const halo =
@@ -1737,9 +1958,9 @@ window.RelationUI = (() => {
 
 
         /*
-         * ------------------------------------------------------
-         * 外环
-         * ------------------------------------------------------
+         * ======================================================
+           节点外环
+         * ======================================================
          */
 
         const ring =
@@ -1789,6 +2010,7 @@ window.RelationUI = (() => {
 
         ring.setAttribute(
           'stroke-width',
+
           isCharacter
             ? '2'
             : '2.4'
@@ -1801,9 +2023,9 @@ window.RelationUI = (() => {
 
 
         /*
-         * ------------------------------------------------------
-         * 中心圆
-         * ------------------------------------------------------
+         * ======================================================
+           中心节点
+         * ======================================================
          */
 
         const dot =
@@ -1851,9 +2073,9 @@ window.RelationUI = (() => {
 
 
         /*
-         * ------------------------------------------------------
-         * 中心高光
-         * ------------------------------------------------------
+         * ======================================================
+           中心高光
+         * ======================================================
          */
 
         const core =
@@ -1906,9 +2128,9 @@ window.RelationUI = (() => {
 
 
         /*
-         * ------------------------------------------------------
-         * 当前状态小标记
-         * ------------------------------------------------------
+         * ======================================================
+           状态小圆点
+         * ======================================================
          */
 
         const currentStatus =
@@ -1986,27 +2208,36 @@ window.RelationUI = (() => {
 
 
         /*
-         * ------------------------------------------------------
-         * 名称 + 身份
-         * ------------------------------------------------------
+         * ======================================================
+           名称与身份
+         * ======================================================
          */
 
         createNodeLabel(
           {
             ...node,
+
             x,
             y
           },
+
           g,
+
           future,
+
           isCharacter
         );
 
 
         /*
-         * ------------------------------------------------------
-         * 点击节点
-         * ------------------------------------------------------
+         * ======================================================
+           节点点击
+         *
+         * 使用 onClick：
+         *
+         * faction  -> WorldState.select('faction', id)
+         * character -> WorldState.select('character', id)
+         * ======================================================
          */
 
         g.addEventListener(
@@ -2018,6 +2249,10 @@ window.RelationUI = (() => {
             event.stopPropagation();
 
 
+            /*
+             * 如果刚刚拖动画布，
+             * 禁止误触。
+             */
             if (
               performance.now() <
               state.suppressClickUntil
@@ -2028,12 +2263,17 @@ window.RelationUI = (() => {
             }
 
 
+            /*
+             * 尚未登场。
+             */
             if (
               future
             ) {
 
               showToast(
-                `“${node.name}”将在天启${WorldUtils.toCN(node.startYear)}年登场`
+                `“${node.name}”将在天启${WorldUtils.toCN(
+                  node.startYear
+                )}年登场`
               );
 
               return;
@@ -2042,14 +2282,16 @@ window.RelationUI = (() => {
 
 
             /*
-             * 直接使用 renderGraph 传入的 onClick。
+             * 正常打开右侧详情。
              */
             if (
               typeof onClick ===
               'function'
             ) {
 
-              onClick(node);
+              onClick(
+                node
+              );
 
             }
 
@@ -2065,10 +2307,18 @@ window.RelationUI = (() => {
     );
 
 
+    /*
+     * 同步当前选中状态。
+     */
     syncSelectionVisuals();
 
 
-    if (svg) {
+    /*
+     * 绑定交互。
+     */
+    if (
+      svg
+    ) {
 
       bindGraphInteraction(
         svg.id,
@@ -2086,7 +2336,7 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     当前选中状态
+     同步节点选中状态
   ============================================================ */
 
   function syncSelectionVisuals() {
@@ -2135,9 +2385,15 @@ window.RelationUI = (() => {
       );
 
 
-    node?.classList.add(
-      'selected'
-    );
+    if (
+      node
+    ) {
+
+      node.classList.add(
+        'selected'
+      );
+
+    }
 
   }
 
@@ -2158,11 +2414,14 @@ window.RelationUI = (() => {
 
       window.WorldData.factionRelations,
 
-      node =>
+      node => {
+
         WorldState.select(
           'faction',
           node.id
-        )
+        );
+
+      }
 
     );
 
@@ -2177,16 +2436,20 @@ window.RelationUI = (() => {
 
       window.WorldData.characterRelations,
 
-      node =>
+      node => {
+
         WorldState.select(
           'character',
           node.id
-        )
+        );
+
+      }
 
     );
 
 
     updateDescriptions();
+
 
     syncSelectionVisuals();
 
@@ -2257,14 +2520,14 @@ window.RelationUI = (() => {
       );
 
 
-    if (factionDesc) {
+    if (
+      factionDesc
+    ) {
 
       factionDesc.textContent =
         `天启${WorldUtils.toCN(year)}年 · ` +
-        `${activeF}/${window.WorldData.factions.length} ` +
-        `个势力参与世界状态 · ` +
-        `${activeFR}/${window.WorldData.factionRelations.length} ` +
-        `条关系生效`;
+        `${activeF}/${window.WorldData.factions.length} 个势力参与世界状态 · ` +
+        `${activeFR}/${window.WorldData.factionRelations.length} 条关系生效`;
 
     }
 
@@ -2275,14 +2538,14 @@ window.RelationUI = (() => {
       );
 
 
-    if (relationDesc) {
+    if (
+      relationDesc
+    ) {
 
       relationDesc.textContent =
         `天启${WorldUtils.toCN(year)}年 · ` +
-        `${activeC}/${window.WorldData.characters.length} ` +
-        `位人物在场 · ` +
-        `${activeCR}/${window.WorldData.characterRelations.length} ` +
-        `条关系生效`;
+        `${activeC}/${window.WorldData.characters.length} 位人物在场 · ` +
+        `${activeCR}/${window.WorldData.characterRelations.length} 条关系生效`;
 
     }
 
@@ -2290,7 +2553,7 @@ window.RelationUI = (() => {
 
 
   /* ============================================================
-     当前页面显示时自动重新适配初始比例
+     页面激活监听
   ============================================================ */
 
   function observePageVisibility(
@@ -2346,10 +2609,13 @@ window.RelationUI = (() => {
     observer.observe(
       section,
       {
+
         attributes:true,
+
         attributeFilter:[
           'class'
         ]
+
       }
     );
 
@@ -2368,8 +2634,8 @@ window.RelationUI = (() => {
       state => {
 
         /*
-         * 用户没有手动缩放/拖动时，
-         * 自动重新计算初始比例。
+         * 用户没有手动操作时，
+         * 自动适配新尺寸。
          */
         if (
           !state.hasUserView
@@ -2394,6 +2660,9 @@ window.RelationUI = (() => {
 
   function init() {
 
+    /*
+     * 绑定两个关系图。
+     */
     bindGraphInteraction(
       'factionEdges',
       graphStates.faction
@@ -2406,6 +2675,9 @@ window.RelationUI = (() => {
     );
 
 
+    /*
+     * 关系图页面显示时自动适配。
+     */
     observePageVisibility(
       'iv-faction',
       graphStates.faction
@@ -2419,14 +2691,16 @@ window.RelationUI = (() => {
 
 
     /*
-     * 第一次渲染。
+     * 初始绘制。
      */
     renderAll();
 
 
     /*
-     * 时间轴变化：
-     * 节点重新渲染，但用户的视图不重置。
+     * 时间轴 / 状态变化。
+     *
+     * 重绘节点，
+     * 但不重置用户当前的缩放和平移。
      */
     WorldState.on(
       reason => {
@@ -2437,6 +2711,8 @@ window.RelationUI = (() => {
         ) {
 
           renderAll();
+
+          return;
 
         }
 
@@ -2454,7 +2730,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 窗口尺寸变化。
+     * 浏览器尺寸变化。
      */
     window.addEventListener(
       'resize',
@@ -2463,7 +2739,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 第一次尝试建立初始视图。
+     * 第一次建立初始视图。
      */
     window.requestAnimationFrame(
       () => {
@@ -2484,6 +2760,10 @@ window.RelationUI = (() => {
 
   }
 
+
+  /* ============================================================
+     对外接口
+  ============================================================ */
 
   return {
 
