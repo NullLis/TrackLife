@@ -61,12 +61,6 @@
       rgba(15,20,26,.02) 100%
     );
 
-  /*
-   * 保持 SVG 内部比例。
-   *
-   * index.html 同时使用：
-   * preserveAspectRatio="xMidYMid meet"
-   */
   cursor:grab;
 
   touch-action:none;
@@ -100,6 +94,8 @@
   transition:
     opacity .18s ease,
     stroke-width .18s ease;
+
+  pointer-events:none;
 }
 
 
@@ -120,7 +116,7 @@
 
 
 /* ============================================================
-   关系文字
+   关系线文字
 ============================================================ */
 
 .rel-edge-label{
@@ -153,12 +149,14 @@
 
 
 /* ============================================================
-   节点
+   关系节点
 ============================================================ */
 
 .rel-node{
 
   cursor:pointer;
+
+  pointer-events:all;
 
   transition:
     opacity .18s ease;
@@ -181,11 +179,37 @@
 
 
 .rel-node circle{
+
   transition:
     r .16s ease,
     filter .16s ease,
     stroke-width .16s ease,
     opacity .16s ease;
+
+  pointer-events:none;
+}
+
+
+/* ============================================================
+   真实点击区域
+============================================================ */
+
+.rel-hit{
+
+  pointer-events:all;
+
+  cursor:pointer;
+
+  fill:#000000;
+
+  fill-opacity:0.001;
+
+  stroke:none;
+
+  /*
+   * 不影响视觉。
+   */
+  opacity:1;
 }
 
 
@@ -613,7 +637,7 @@
 
 
 /* ============================================================
-   图表说明
+   说明文字
 ============================================================ */
 
 .graph-note{
