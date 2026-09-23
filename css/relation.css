@@ -1,8 +1,17 @@
 .graph-large-wrap{
   display:flex;
   flex-direction:column;
-  align-items:center;
-  gap:20px;
+  align-items:stretch;
+
+  width:100%;
+
+  /*
+   * 让关系图尽可能占满页面
+   */
+  min-width:0;
+
+  gap:18px;
+
   padding-top:8px;
 
   /*
@@ -19,9 +28,36 @@
 
 .graph-large-svg{
   display:block;
+
+  /*
+   * 直接占满信息页面宽度
+   */
   width:100%;
-  max-width:760px;
-  height:auto;
+
+  /*
+   * 不再限制 760px
+   */
+  max-width:none;
+
+  /*
+   * 让关系图达到类似世界地图的视觉面积
+   */
+  height:calc(100vh - 320px);
+
+  /*
+   * 防止窗口较小时高度过低
+   */
+  min-height:520px;
+
+  /*
+   * 同时限制极端超高屏幕
+   */
+  max-height:820px;
+
+  /*
+   * 保持宽高稳定
+   */
+  box-sizing:border-box;
 
   background:rgba(15,20,26,.35);
 
@@ -30,34 +66,43 @@
    */
   border:none !important;
 
-  /*
-   * 保留原来的圆角
-   */
   border-radius:14px;
 
-  padding:10px 0;
+  /*
+   * 增加一点内部空间
+   */
+  padding:18px 10px;
 
   /*
-   * 关系图本身负责缩放、拖动。
+   * 关系图本身负责缩放、拖动
    */
   cursor:grab;
 
   /*
-   * 禁止浏览器把拖动关系图解释成页面滚动。
+   * 禁止浏览器把拖动关系图解释成页面滚动
    */
   touch-action:none;
 
   /*
-   * 禁止拖动时选中文字。
+   * 禁止拖动时选中文字
    */
   user-select:none;
 
   /*
-   * 防止某些浏览器的滚动链影响外层页面。
+   * 防止滚动链影响外层页面
    */
   overscroll-behavior:contain;
+
+  /*
+   * 防止 SVG 出现默认空白
+   */
+  overflow:hidden;
 }
 
+
+/* ============================================================
+   拖拽状态
+============================================================ */
 
 .graph-large-svg.graph-pan-active{
   cursor:grabbing;
@@ -65,7 +110,7 @@
 
 
 /*
- * 鼠标悬停时不再显示边框变化。
+ * 悬停时也不要出现边框
  */
 .graph-large-svg:hover{
   border:none !important;
@@ -79,8 +124,13 @@
 .graph-legend{
   display:flex;
   flex-wrap:wrap;
+
   justify-content:center;
-  gap:14px 24px;
+  align-items:center;
+
+  gap:14px 28px;
+
+  width:100%;
 
   font-size:11px;
   color:var(--muted);
@@ -90,14 +140,20 @@
 .graph-legend-item{
   display:flex;
   align-items:center;
+
   gap:7px;
+
+  white-space:nowrap;
 }
 
 
 .graph-legend-dot{
   width:8px;
   height:8px;
+
   border-radius:50%;
+
+  flex-shrink:0;
 }
 
 
@@ -142,7 +198,9 @@
   paint-order:stroke;
 
   stroke:#0e1116;
+
   stroke-width:2.5px;
+
   stroke-linejoin:round;
 }
 
@@ -223,7 +281,9 @@
   paint-order:stroke;
 
   stroke:#0e1116;
+
   stroke-width:3px;
+
   stroke-linejoin:round;
 }
 
@@ -260,22 +320,125 @@
 
 
 /* ============================================================
-   小屏幕
+   桌面端大屏
 ============================================================ */
 
-@media (max-width:720px){
+@media(min-width:1100px){
+
+  .graph-large-wrap{
+    gap:20px;
+  }
+
+  .graph-large-svg{
+    /*
+     * 大屏幕进一步增加关系图面积
+     */
+    height:calc(100vh - 300px);
+
+    min-height:600px;
+
+    max-height:860px;
+
+    padding:
+      20px
+      12px;
+  }
+
+  .graph-legend{
+    gap:16px 32px;
+
+    font-size:11px;
+  }
+}
+
+
+/* ============================================================
+   超宽屏
+============================================================ */
+
+@media(min-width:1600px){
+
+  .graph-large-svg{
+    /*
+     * 超宽屏时保持非常大的关系图区域
+     */
+    height:calc(100vh - 290px);
+
+    max-height:900px;
+
+    padding:
+      24px
+      16px;
+  }
+
+  .graph-legend{
+    font-size:12px;
+
+    gap:18px 36px;
+  }
+}
+
+
+/* ============================================================
+   中等屏幕
+============================================================ */
+
+@media(max-width:1100px){
+
+  .graph-large-wrap{
+    gap:16px;
+  }
+
+  .graph-large-svg{
+    width:100%;
+
+    height:calc(100vh - 340px);
+
+    min-height:480px;
+
+    max-height:760px;
+
+    padding:
+      16px
+      8px;
+  }
+
+  .graph-legend{
+    gap:12px 20px;
+  }
+}
+
+
+/* ============================================================
+   平板 / 小屏幕
+============================================================ */
+
+@media(max-width:720px){
 
   .graph-large-wrap{
     gap:14px;
+
+    padding-top:4px;
   }
 
 
   .graph-large-svg{
-    max-width:none;
-
     width:100%;
 
-    min-height:300px;
+    /*
+     * 移动端不要占满到把时间轴完全挤掉
+     */
+    height:calc(100vh - 420px);
+
+    min-height:360px;
+
+    max-height:none;
+
+    padding:
+      10px
+      4px;
+
+    border-radius:12px;
   }
 
 
@@ -285,4 +448,34 @@
     font-size:10px;
   }
 
+
+  .graph-legend-dot{
+    width:7px;
+    height:7px;
+  }
+}
+
+
+/* ============================================================
+   极小屏幕
+============================================================ */
+
+@media(max-width:480px){
+
+  .graph-large-svg{
+    height:340px;
+
+    min-height:340px;
+
+    padding:
+      8px
+      2px;
+  }
+
+
+  .graph-legend{
+    gap:8px 14px;
+
+    font-size:9.5px;
+  }
 }
