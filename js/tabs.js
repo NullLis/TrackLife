@@ -13,8 +13,15 @@ window.TabsUI = (() => {
       '点击人物节点查看当前年份的关系、地点与事件。'
   };
 
+
+  /* ============================================================
+     更新顶部栏
+  ============================================================ */
+
   function updateTopbar(tab) {
+
     document.body.dataset.tab = tab;
+
 
     const titleMap = {
       map: '世界地图',
@@ -23,32 +30,48 @@ window.TabsUI = (() => {
       relation: '人物关系'
     };
 
+
     const title =
       document.getElementById(
         'topbarTitle'
       );
 
+
     if (title) {
+
       title.textContent =
         titleMap[tab] ||
         '世界地图';
+
     }
+
 
     const desc =
       document.getElementById(
         'topbarDesc'
       );
 
+
     if (desc) {
+
       desc.textContent =
         descriptions[tab] ||
         descriptions.map;
+
     }
+
   }
 
+
+  /* ============================================================
+     切换一级页面
+  ============================================================ */
+
   function setTab(tab) {
+
     WorldState.currentTab =
       tab;
+
 
     /*
      * 更新左侧导航。
@@ -57,13 +80,18 @@ window.TabsUI = (() => {
       .querySelectorAll(
         '.info-tab'
       )
-      .forEach(tabButton => {
-        tabButton.classList.toggle(
-          'active',
-          tabButton.dataset.tab ===
-            tab
-        );
-      });
+      .forEach(
+        tabButton => {
+
+          tabButton.classList.toggle(
+            'active',
+            tabButton.dataset.tab ===
+              tab
+          );
+
+        }
+      );
+
 
     /*
      * 更新全屏信息页。
@@ -72,13 +100,18 @@ window.TabsUI = (() => {
       .querySelectorAll(
         '.info-view-page'
       )
-      .forEach(page => {
-        page.classList.toggle(
-          'active',
-          page.id ===
-            `iv-${tab}`
-        );
-      });
+      .forEach(
+        page => {
+
+          page.classList.toggle(
+            'active',
+            page.id ===
+              `iv-${tab}`
+          );
+
+        }
+      );
+
 
     /*
      * 地图模式不显示全屏信息层。
@@ -88,11 +121,14 @@ window.TabsUI = (() => {
         'infoView'
       );
 
+
     if (infoView) {
+
       infoView.classList.toggle(
         'show',
         tab !== 'map'
       );
+
 
       infoView.setAttribute(
         'aria-hidden',
@@ -100,12 +136,15 @@ window.TabsUI = (() => {
           ? 'true'
           : 'false'
       );
+
     }
+
 
     document.body.classList.toggle(
       'info-open',
       tab !== 'map'
     );
+
 
     /*
      * 地图图例只在世界地图页面显示。
@@ -115,49 +154,68 @@ window.TabsUI = (() => {
         'mapLegend'
       );
 
+
     if (mapLegend) {
+
       mapLegend.classList.toggle(
         'hidden',
         tab !== 'map'
       );
+
     }
 
+
     updateTopbar(tab);
+
 
     /*
      * 切换一级页面时关闭已有的右侧详情。
      *
-     * 注意：
-     *
      * 资源卡片点击时不会调用 setTab('map')，
-     * 所以资源页中的右侧详情不会被关闭。
+     * 所以资源页中的右侧详情不会跳回地图。
      */
     SidebarUI.close();
+
 
     /*
      * 进入地点资源页面时刷新资源列表。
      */
     if (tab === 'resource') {
+
       renderResources();
+
     }
+
   }
 
+
+  /* ============================================================
+     渲染地点资源
+  ============================================================ */
+
   function renderResources() {
+
     const grid =
       document.getElementById(
         'resourceGrid'
       );
 
+
     if (!grid) {
+
       return;
+
     }
+
 
     const showActiveOnly =
       WorldState.resourceFilter ===
       'active';
 
+
     const year =
       WorldState.currentYear;
+
 
     const locations =
       WorldData.locations.filter(
@@ -169,7 +227,9 @@ window.TabsUI = (() => {
           )
       );
 
+
     if (!locations.length) {
+
       grid.innerHTML = `
         <div class="content-page-empty">
           当前时间线没有符合条件的地点。
@@ -177,7 +237,9 @@ window.TabsUI = (() => {
       `;
 
       return;
+
     }
+
 
     grid.innerHTML =
       locations
@@ -227,15 +289,21 @@ window.TabsUI = (() => {
 
               </div>
 
+
               <div class="resource-card-year">
+
                 ${WorldUtils.escapeHtml(
                   location.region
                 )}
+
                 ·
+
                 天启${WorldUtils.toCN(
                   location.startYear
                 )}年开放
+
               </div>
+
 
               <div class="resource-card-tags">
 
@@ -258,18 +326,9 @@ window.TabsUI = (() => {
         )
         .join('');
 
+
     /*
      * 地点资源卡片点击。
-     *
-     * 旧逻辑：
-     *
-     * setTab('map')
-     * WorldState.select(...)
-     * WorldMap.focusLocation(...)
-     *
-     * 会跳回世界地图。
-     *
-     * 新逻辑：
      *
      * 保持当前 resource 页面，
      * 只打开右侧详情。
@@ -278,41 +337,55 @@ window.TabsUI = (() => {
       .querySelectorAll(
         '[data-resource-id]'
       )
-      .forEach(card => {
-        card.addEventListener(
-          'click',
-          event => {
-            event.preventDefault();
+      .forEach(
+        card => {
 
-            /*
-             * 阻止点击继续向外传播。
-             */
-            event.stopPropagation();
+          card.addEventListener(
+            'click',
+            event => {
 
-            const locationId =
-              card.dataset.resourceId;
+              event.preventDefault();
+              event.stopPropagation();
 
-            if (!locationId) {
-              return;
+
+              const locationId =
+                card.dataset.resourceId;
+
+
+              if (!locationId) {
+
+                return;
+
+              }
+
+
+              /*
+               * 只选择地点。
+               *
+               * SidebarUI 会监听 selection，
+               * 自动在当前地点资源页面右侧
+               * 打开详情。
+               */
+              WorldState.select(
+                'location',
+                locationId
+              );
+
             }
+          );
 
-            /*
-             * 只选择地点。
-             *
-             * SidebarUI 会监听 selection，
-             * 自动在当前地点资源页面右侧
-             * 打开详情。
-             */
-            WorldState.select(
-              'location',
-              locationId
-            );
-          }
-        );
-      });
+        }
+      );
+
   }
 
+
+  /* ============================================================
+     初始化
+  ============================================================ */
+
   function init() {
+
     /*
      * 一级导航。
      */
@@ -320,24 +393,36 @@ window.TabsUI = (() => {
       .querySelectorAll(
         '.info-tab'
       )
-      .forEach(tabButton => {
-        tabButton.addEventListener(
-          'click',
-          event => {
-            event.preventDefault();
-            event.stopPropagation();
+      .forEach(
+        tabButton => {
 
-            const tab =
-              tabButton.dataset.tab;
+          tabButton.addEventListener(
+            'click',
+            event => {
 
-            if (!tab) {
-              return;
+              event.preventDefault();
+              event.stopPropagation();
+
+
+              const tab =
+                tabButton.dataset.tab;
+
+
+              if (!tab) {
+
+                return;
+
+              }
+
+
+              setTab(tab);
+
             }
+          );
 
-            setTab(tab);
-          }
-        );
-      });
+        }
+      );
+
 
     /*
      * 左侧导航收起/展开。
@@ -347,50 +432,51 @@ window.TabsUI = (() => {
         'tabsToggle'
       );
 
+
     if (tabsToggle) {
+
       tabsToggle.addEventListener(
         'click',
         event => {
+
           event.preventDefault();
           event.stopPropagation();
 
+
           WorldState.tabsCollapsed =
             !WorldState.tabsCollapsed;
+
 
           const wrapper =
             document.getElementById(
               'tabsWrapper'
             );
 
+
           if (wrapper) {
+
             wrapper.classList.toggle(
               'collapsed',
               WorldState.tabsCollapsed
             );
+
           }
+
         }
       );
+
     }
+
 
     /*
-     * 返回世界地图。
+     * 注意：
+     *
+     * “返回地图”按钮已经彻底移除。
+     *
+     * 不再绑定：
+     * btnBackMap
      */
-    const backMap =
-      document.getElementById(
-        'btnBackMap'
-      );
 
-    if (backMap) {
-      backMap.addEventListener(
-        'click',
-        event => {
-          event.preventDefault();
-          event.stopPropagation();
-
-          setTab('map');
-        }
-      );
-    }
 
     /*
      * 资源筛选按钮。
@@ -399,57 +485,75 @@ window.TabsUI = (() => {
       .querySelectorAll(
         '[data-resource-filter]'
       )
-      .forEach(button => {
-        button.addEventListener(
-          'click',
-          event => {
-            event.preventDefault();
-            event.stopPropagation();
+      .forEach(
+        button => {
 
-            WorldState.resourceFilter =
-              button.dataset.resourceFilter;
+          button.addEventListener(
+            'click',
+            event => {
 
-            document
-              .querySelectorAll(
-                '[data-resource-filter]'
-              )
-              .forEach(item => {
-                item.classList.toggle(
-                  'active',
-                  item === button
+              event.preventDefault();
+              event.stopPropagation();
+
+
+              WorldState.resourceFilter =
+                button.dataset.resourceFilter;
+
+
+              document
+                .querySelectorAll(
+                  '[data-resource-filter]'
+                )
+                .forEach(
+                  item => {
+
+                    item.classList.toggle(
+                      'active',
+                      item === button
+                    );
+
+                  }
                 );
-              });
 
-            renderResources();
-          }
-        );
-      });
+
+              renderResources();
+
+            }
+          );
+
+        }
+      );
+
 
     /*
      * 时间轴变化时，
      * 如果当前正在地点资源页面，
      * 刷新资源列表。
-     *
-     * 右侧已选地点仍由 SidebarUI
-     * 根据 WorldState 重新渲染。
      */
     WorldState.on(
       reason => {
+
         if (
           reason === 'year' &&
           WorldState.currentTab ===
             'resource'
         ) {
+
           renderResources();
+
         }
+
       }
     );
+
 
     /*
      * 初始顶部信息。
      */
     updateTopbar('map');
+
   }
+
 
   return {
     init,
@@ -457,4 +561,5 @@ window.TabsUI = (() => {
     renderResources,
     updateTopbar
   };
+
 })();
