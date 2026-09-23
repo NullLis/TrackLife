@@ -11,15 +11,15 @@ window.RelationUI = (() => {
   const INITIAL_ZOOM = 1.0;
 
   /*
-   * 当关系图比视口小时，
-   * 依然允许拖动的额外空间。
+   * 即使关系图比当前视口小，
+   * 依然允许继续拖动。
    */
   const PAN_MARGIN_X = 0.35;
   const PAN_MARGIN_Y = 0.35;
 
 
   /* =========================================================
-     两张关系图分别保存自己的状态
+     关系图状态
      ========================================================= */
 
   const graphStates = {
@@ -73,13 +73,6 @@ window.RelationUI = (() => {
 
       startY: 0,
 
-      /*
-       * 鼠标/触摸按下时对应的节点。
-       *
-       * 即使 SVG 进行了 pointer capture，
-       * 我们依然能够在 pointerup 时知道
-       * 用户最初点击的是哪个节点。
-       */
       pressNodeId: null
 
     },
@@ -108,12 +101,13 @@ window.RelationUI = (() => {
 
 
   /*
-   * 防止：
+   * 防止一次点击同时触发：
    *
-   * pointerup -> 打开详情
-   * click    -> 再次打开详情
+   * pointerup
+   * +
+   * click
    *
-   * 导致重复执行。
+   * 导致详情重复打开。
    */
   let suppressClickUntil = 0;
 
@@ -154,7 +148,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     获取 SVG ViewBox
+     ViewBox
      ========================================================= */
 
   function getViewBox(svg) {
@@ -213,11 +207,8 @@ window.RelationUI = (() => {
 
       const values =
         value
-
           .trim()
-
           .split(/[\s,]+/)
-
           .map(Number);
 
 
@@ -225,9 +216,7 @@ window.RelationUI = (() => {
 
         values.length === 4 &&
 
-        values.every(
-          Number.isFinite
-        ) &&
+        values.every(Number.isFinite) &&
 
         values[2] > 0 &&
 
@@ -268,7 +257,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     数值限制
+     Clamp
      ========================================================= */
 
   function clamp(
@@ -289,21 +278,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     判断节点是否为未来节点
-     ========================================================= */
-
-  function isFutureNode(node) {
-
-    return WorldMap.isFuture(
-      node,
-      WorldState.currentYear
-    );
-
-  }
-
-
-  /* =========================================================
-     SVG / 浏览器坐标转换
+     浏览器坐标 -> SVG 坐标
      ========================================================= */
 
   function clientToSvg(
@@ -338,6 +313,7 @@ window.RelationUI = (() => {
       point.x =
         clientX;
 
+
       point.y =
         clientY;
 
@@ -360,7 +336,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * getScreenCTM() 不可用时的备用方案
+     * 备用转换
      */
     const rect =
       svg.getBoundingClientRect();
@@ -373,6 +349,7 @@ window.RelationUI = (() => {
     return {
 
       x:
+
         vb.x +
 
         (
@@ -390,6 +367,7 @@ window.RelationUI = (() => {
         vb.width,
 
       y:
+
         vb.y +
 
         (
@@ -414,27 +392,7 @@ window.RelationUI = (() => {
   /* =========================================================
      平移边界
      
-     非常重要：
-
-     原来的逻辑：
-
-       如果关系图比 SVG 小
-       就强制居中。
-
-     结果：
-
-       scale < 1
-       ↓
-       用户拖动
-       ↓
-       clampPosition()
-       ↓
-       强制恢复到中心
-
-     所以缩小之后实际上无法拖动。
-
-     现在：
-       无论缩放大小，都提供 X/Y 平移空间。
+     无论缩放比例大小，都允许拖动。
      ========================================================= */
 
   function clampPosition(type) {
@@ -468,9 +426,6 @@ window.RelationUI = (() => {
       state.scale;
 
 
-    /*
-     * 额外平移区域
-     */
     const extraX =
       vb.width *
       PAN_MARGIN_X;
@@ -494,9 +449,6 @@ window.RelationUI = (() => {
       scaledWidth >= vb.width
     ) {
 
-      /*
-       * 图比视口大
-       */
       minX =
         vb.width -
         scaledWidth -
@@ -508,11 +460,6 @@ window.RelationUI = (() => {
 
     } else {
 
-      /*
-       * 图比视口小
-       *
-       * 依然允许拖动。
-       */
       minX =
         -extraX;
 
@@ -580,7 +527,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     应用关系图变换
+     应用 Transform
      ========================================================= */
 
   function applyTransform(type) {
@@ -664,9 +611,6 @@ window.RelationUI = (() => {
       INITIAL_ZOOM;
 
 
-    /*
-     * 初始保持居中
-     */
     state.x =
       (
         vb.width -
@@ -683,9 +627,6 @@ window.RelationUI = (() => {
       ) / 2;
 
 
-    /*
-     * 应用可拖动范围
-     */
     clampPosition(type);
 
 
@@ -710,7 +651,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     以某一个屏幕位置为中心缩放
+     缩放
      ========================================================= */
 
   function zoomAtPoint(
@@ -766,9 +707,6 @@ window.RelationUI = (() => {
     }
 
 
-    /*
-     * 当前鼠标在 SVG 坐标系中的位置
-     */
     const mouse =
       clientToSvg(
         svg,
@@ -777,10 +715,6 @@ window.RelationUI = (() => {
       );
 
 
-    /*
-     * 缩放前，
-     * 鼠标对应的内容坐标
-     */
     const contentX =
       (
         mouse.x -
@@ -799,9 +733,6 @@ window.RelationUI = (() => {
       newScale;
 
 
-    /*
-     * 缩放后保持鼠标位置不跳
-     */
     state.x =
       mouse.x -
       contentX *
@@ -823,7 +754,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     以 SVG 中心缩放
+     居中缩放
      ========================================================= */
 
   function zoomCenter(
@@ -864,7 +795,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     节点选中视觉
+     节点选中
      ========================================================= */
 
   function selectNode(id) {
@@ -902,7 +833,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     根据类型获取节点数据
+     获取实体
      ========================================================= */
 
   function getNodeData(
@@ -911,6 +842,7 @@ window.RelationUI = (() => {
   ) {
 
     const list =
+
       type === 'faction'
 
         ? WorldData.factions
@@ -918,16 +850,23 @@ window.RelationUI = (() => {
         : WorldData.characters;
 
 
+    if (!Array.isArray(list)) {
+
+      return null;
+
+    }
+
+
     return list.find(
-      node =>
-        node.id === id
-    );
+      item =>
+        item.id === id
+    ) || null;
 
   }
 
 
   /* =========================================================
-     打开节点详情
+     打开详情
      ========================================================= */
 
   function openDetail(
@@ -935,6 +874,9 @@ window.RelationUI = (() => {
     id
   ) {
 
+    /*
+     * 防止同一次点击重复触发。
+     */
     if (
       Date.now() <
       suppressClickUntil
@@ -954,16 +896,25 @@ window.RelationUI = (() => {
 
     if (!node) {
 
+      console.warn(
+        '[RelationUI] 找不到实体:',
+        type,
+        id
+      );
+
       return;
 
     }
 
 
     /*
-     * 未来节点不进入详情。
+     * 未来节点只提示，不打开详情。
      */
     if (
-      isFutureNode(node)
+      WorldMap.isFuture(
+        node,
+        WorldState.currentYear
+      )
     ) {
 
       if (
@@ -972,13 +923,11 @@ window.RelationUI = (() => {
       ) {
 
         showToast(
-
           `“${node.name}”将在天启${WorldUtils.toCN(node.startYear)}年${
             type === 'character'
               ? '登场'
               : '开放'
           }`
-
         );
 
       }
@@ -989,7 +938,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 保存统一选中状态
+     * 统一状态
      */
     WorldState.select(
       type,
@@ -999,21 +948,17 @@ window.RelationUI = (() => {
 
 
     /*
-     * 更新关系图高亮
+     * 节点视觉选中
      */
     selectNode(id);
 
 
     /*
-     * 强制打开右侧面板。
+     * 右侧详情。
      *
-     * SidebarUI 本身已经监听
-     * WorldState.selection，
-     * 这里再次调用是为了保证：
-     *
-     * 关系图 -> 详情
-     *
-     * 这条链路不会依赖监听初始化时序。
+     * SidebarUI 自己也监听 selection，
+     * 这里额外调用是为了保证关系图点击
+     * 一定能够进入详情。
      */
     if (
       window.SidebarUI
@@ -1044,7 +989,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     SVG 元素创建
+     创建 SVG
      ========================================================= */
 
   function createSvg(
@@ -1153,9 +1098,6 @@ window.RelationUI = (() => {
       document.createDocumentFragment();
 
 
-    /*
-     * 关系线
-     */
     const line =
       createSvg(
         'line',
@@ -1186,8 +1128,10 @@ window.RelationUI = (() => {
 
 
     if (
+
       WorldState.currentYear <
       edge.startYear
+
     ) {
 
       line.classList.add(
@@ -1230,9 +1174,6 @@ window.RelationUI = (() => {
     );
 
 
-    /*
-     * 关系文字
-     */
     const label =
       createSvg(
         'text',
@@ -1297,7 +1238,9 @@ window.RelationUI = (() => {
 
 
     const group =
-      createSvg('g');
+      createSvg(
+        'g'
+      );
 
 
     group.classList.add(
@@ -1349,17 +1292,21 @@ window.RelationUI = (() => {
         'circle',
         {
 
-          cx: node.x,
+          cx:
+            node.x,
 
-          cy: node.y,
+          cy:
+            node.y,
 
-          r: 16,
+          r:
+            16,
 
           fill:
             node.color ||
             '#d4a76a',
 
-          opacity: .12
+          opacity:
+            .12
 
         }
       );
@@ -1379,13 +1326,17 @@ window.RelationUI = (() => {
         'circle',
         {
 
-          cx: node.x,
+          cx:
+            node.x,
 
-          cy: node.y,
+          cy:
+            node.y,
 
-          r: 10,
+          r:
+            10,
 
-          fill: 'none',
+          fill:
+            'none',
 
           stroke:
             node.color ||
@@ -1394,7 +1345,8 @@ window.RelationUI = (() => {
           'stroke-width':
             1,
 
-          opacity: .35
+          opacity:
+            .35
 
         }
       );
@@ -1414,11 +1366,14 @@ window.RelationUI = (() => {
         'circle',
         {
 
-          cx: node.x,
+          cx:
+            node.x,
 
-          cy: node.y,
+          cy:
+            node.y,
 
-          r: 8,
+          r:
+            8,
 
           fill:
             node.color ||
@@ -1455,7 +1410,8 @@ window.RelationUI = (() => {
           cy:
             node.y - 9,
 
-          r: 3,
+          r:
+            3,
 
           fill:
 
@@ -1495,11 +1451,14 @@ window.RelationUI = (() => {
           y:
             node.y + 17,
 
-          width: 68,
+          width:
+            68,
 
-          height: 27,
+          height:
+            27,
 
-          rx: 6,
+          rx:
+            6,
 
           fill:
             '#111821',
@@ -1532,7 +1491,8 @@ window.RelationUI = (() => {
         'text',
         {
 
-          x: node.x,
+          x:
+            node.x,
 
           y:
             node.y + 28
@@ -1559,7 +1519,8 @@ window.RelationUI = (() => {
         'text',
         {
 
-          x: node.x,
+          x:
+            node.x,
 
           y:
             node.y + 40
@@ -1574,23 +1535,29 @@ window.RelationUI = (() => {
 
 
     if (
+
       WorldMap.isActive(
         node,
         WorldState.currentYear
       )
+
     ) {
 
       role.textContent =
         node.role || '';
 
-    } else if (
+    }
+
+    else if (
       future
     ) {
 
       role.textContent =
         '尚未登场';
 
-    } else {
+    }
+
+    else {
 
       role.textContent =
         '已离场';
@@ -1613,11 +1580,14 @@ window.RelationUI = (() => {
           y:
             node.y - 16,
 
-          width: 80,
+          width:
+            80,
 
-          height: 68,
+          height:
+            68,
 
-          rx: 10,
+          rx:
+            10,
 
           fill:
             '#ffffff',
@@ -1638,48 +1608,39 @@ window.RelationUI = (() => {
 
 
     /* =======================================================
-       添加子元素
+       添加节点内容
        ======================================================= */
 
     group.appendChild(
       halo
     );
 
-
     group.appendChild(
       ring
     );
-
 
     group.appendChild(
       dot
     );
 
-
     group.appendChild(
       stateDot
     );
-
 
     group.appendChild(
       labelBg
     );
 
-
     group.appendChild(
       name
     );
-
 
     group.appendChild(
       role
     );
 
-
     /*
-     * 热区最后添加。
-     *
-     * 这样整个节点区域都能点击。
+     * 点击热区放最后。
      */
     group.appendChild(
       hit
@@ -1687,22 +1648,19 @@ window.RelationUI = (() => {
 
 
     /* =======================================================
-       普通 click 作为备用路径
+       click 备用处理
        ======================================================= */
 
     group.addEventListener(
       'click',
       event => {
 
-        /*
-         * 防止冒泡到页面空白区域。
-         */
         event.stopPropagation();
 
 
         /*
-         * pointerup 已经处理过的点击，
-         * 不再执行一次。
+         * 如果 pointerup 已经处理过，
+         * 这里不重复执行。
          */
         if (
           Date.now() <
@@ -1729,7 +1687,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     渲染关系图
+     绘制关系图
      ========================================================= */
 
   function renderGraph(
@@ -1762,19 +1720,14 @@ window.RelationUI = (() => {
     }
 
 
-    /*
-     * 清空旧节点
-     */
     edgesBox.innerHTML =
       '';
+
 
     nodesBox.innerHTML =
       '';
 
 
-    /*
-     * 建立节点表
-     */
     const nodeMap =
       Object.fromEntries(
 
@@ -1788,9 +1741,10 @@ window.RelationUI = (() => {
       );
 
 
-    /*
-     * 关系线
-     */
+    /* -------------------------------------------------------
+       关系线
+    ------------------------------------------------------- */
+
     edges.forEach(
       edge => {
 
@@ -1813,9 +1767,10 @@ window.RelationUI = (() => {
     );
 
 
-    /*
-     * 节点
-     */
+    /* -------------------------------------------------------
+       节点
+    ------------------------------------------------------- */
+
     nodes.forEach(
       node => {
 
@@ -1833,7 +1788,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 保留当前缩放和平移。
+     * 保留已有缩放/位置。
      */
     const state =
       getState(type);
@@ -1845,7 +1800,9 @@ window.RelationUI = (() => {
 
       fitGraph(type);
 
-    } else {
+    }
+
+    else {
 
       clampPosition(type);
 
@@ -1857,7 +1814,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     选中状态同步
+     同步选中状态
      ========================================================= */
 
   function syncSelectionVisuals() {
@@ -1906,7 +1863,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     更新关系图描述
+     更新描述
      ========================================================= */
 
   function updateDescriptions() {
@@ -2008,14 +1965,13 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     pointerdown
-     
-     这里只记录拖动起点。
-     
-     非常重要：
-     不要在这里 preventDefault()。
-     
-     否则普通点击可能无法产生 click。
+     Pointer Down
+
+     这里是此次修复的关键。
+
+     不再调用 event.preventDefault()。
+
+     普通点击必须允许浏览器继续生成 click。
      ========================================================= */
 
   function pointerDown(
@@ -2024,7 +1980,7 @@ window.RelationUI = (() => {
   ) {
 
     /*
-     * 鼠标只允许左键。
+     * 鼠标只响应左键。
      */
     if (
 
@@ -2077,19 +2033,19 @@ window.RelationUI = (() => {
 
 
     /*
-     * 记录用户最初按下的节点。
-     *
-     * 即使之后使用 pointer capture，
-     * 我们也不会丢失节点信息。
+     * 记录按下时所在节点。
      */
     drag.pressNodeId =
       null;
 
 
-    const target =
+    let target =
       event.target;
 
 
+    /*
+     * SVGElement 一般支持 closest。
+     */
     if (
       target &&
       typeof target.closest ===
@@ -2113,6 +2069,49 @@ window.RelationUI = (() => {
     }
 
 
+    /*
+     * 如果 target 本身没有 closest，
+     * 再通过 parentElement 向上查找。
+     */
+    if (
+      !drag.pressNodeId
+    ) {
+
+      let current =
+        target;
+
+
+      while (
+        current &&
+        current !==
+          document
+      ) {
+
+        if (
+          current.classList &&
+          current.classList.contains(
+            'rel-node'
+          )
+        ) {
+
+          drag.pressNodeId =
+            current.dataset.id ||
+            null;
+
+
+          break;
+
+        }
+
+
+        current =
+          current.parentNode;
+
+      }
+
+    }
+
+
     const svg =
       getSvg(type);
 
@@ -2130,24 +2129,28 @@ window.RelationUI = (() => {
           event.pointerId
         );
 
-      } catch (_) {}
+      }
+
+      catch (_) {}
 
     }
 
 
     /*
-     * 这里刻意不调用：
+     * 注意：
+     *
+     * 这里不能：
      *
      * event.preventDefault();
      *
-     * 因为普通点击需要让浏览器继续生成 click。
+     * 否则普通点击可能没有 click。
      */
 
   }
 
 
   /* =========================================================
-     pointermove
+     Pointer Move
      ========================================================= */
 
   function pointerMove(
@@ -2228,8 +2231,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 只有真正移动超过阈值，
-     * 才认为用户在拖动。
+     * 超过阈值才算拖动。
      */
     if (
 
@@ -2262,9 +2264,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 只有真正拖动时阻止默认行为。
-     *
-     * 点击时不阻止。
+     * 只有真正拖动时才阻止默认行为。
      */
     if (
       drag.moved
@@ -2278,17 +2278,11 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     pointerup
-     
-     最关键：
+     Pointer Up
 
-     没发生拖动
-     +
-     按下时确实落在节点上
-     =
-     直接打开详情。
+     这里直接处理点击详情。
 
-     这样不再依赖浏览器 click 的生成。
+     不再单纯依赖 click。
      ========================================================= */
 
   function pointerUp(
@@ -2336,7 +2330,9 @@ window.RelationUI = (() => {
           event.pointerId
         );
 
-      } catch (_) {}
+      }
+
+      catch (_) {}
 
     }
 
@@ -2350,19 +2346,26 @@ window.RelationUI = (() => {
 
 
     /*
-     * 点击而不是拖动。
+     * =======================================================
+     * 没有移动：
+     *
+     * 说明这是“点击”。
+     * =======================================================
      */
+
     if (
+
       !wasMoved &&
+
       pressNodeId
+
     ) {
 
       /*
-       * 先设置屏蔽窗口，
-       * 防止之后的原生 click 再执行一次。
+       * 防止后续 click 再执行一次。
        */
       suppressClickUntil =
-        Date.now() + 300;
+        Date.now() + 350;
 
 
       openDetail(
@@ -2374,19 +2377,26 @@ window.RelationUI = (() => {
 
 
     /*
-     * 拖动结束：
-     * 屏蔽可能产生的 click。
+     * =======================================================
+     * 发生移动：
+     *
+     * 说明这是拖动。
+     * =======================================================
      */
+
     else if (
       wasMoved
     ) {
 
       suppressClickUntil =
-        Date.now() + 300;
+        Date.now() + 350;
 
     }
 
 
+    /*
+     * 重置拖动状态。
+     */
     drag.active =
       false;
 
@@ -2402,16 +2412,11 @@ window.RelationUI = (() => {
     drag.pressNodeId =
       null;
 
-
-    /*
-     * 不在这里调用 preventDefault。
-     */
-
   }
 
 
   /* =========================================================
-     pointercancel
+     Pointer Cancel
      ========================================================= */
 
   function pointerCancel(
@@ -2454,7 +2459,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     绑定关系图事件
+     绑定关系图
      ========================================================= */
 
   function bindGraph(
@@ -2467,28 +2472,33 @@ window.RelationUI = (() => {
 
     if (!svg) {
 
+      console.warn(
+        '[RelationUI] 找不到 SVG:',
+        type
+      );
+
       return;
 
     }
 
 
     /*
-     * 关系图可交互。
+     * 允许 SVG 接收事件。
      */
     svg.style.pointerEvents =
       'auto';
 
 
     /*
-     * 禁止浏览器将触摸拖动解释成页面滚动。
+     * 禁止触摸时被浏览器当成页面滚动。
      */
     svg.style.touchAction =
       'none';
 
 
-    /* =======================================================
-       pointerdown
-       ======================================================= */
+    /* -------------------------------------------------------
+       Pointer Down
+    ------------------------------------------------------- */
 
     svg.addEventListener(
       'pointerdown',
@@ -2503,9 +2513,9 @@ window.RelationUI = (() => {
     );
 
 
-    /* =======================================================
-       pointermove
-       ======================================================= */
+    /* -------------------------------------------------------
+       Pointer Move
+    ------------------------------------------------------- */
 
     svg.addEventListener(
       'pointermove',
@@ -2520,9 +2530,9 @@ window.RelationUI = (() => {
     );
 
 
-    /* =======================================================
-       pointerup
-       ======================================================= */
+    /* -------------------------------------------------------
+       Pointer Up
+    ------------------------------------------------------- */
 
     svg.addEventListener(
       'pointerup',
@@ -2537,9 +2547,9 @@ window.RelationUI = (() => {
     );
 
 
-    /* =======================================================
-       pointercancel
-       ======================================================= */
+    /* -------------------------------------------------------
+       Pointer Cancel
+    ------------------------------------------------------- */
 
     svg.addEventListener(
       'pointercancel',
@@ -2553,9 +2563,9 @@ window.RelationUI = (() => {
     );
 
 
-    /* =======================================================
-       鼠标滚轮缩放
-       ======================================================= */
+    /* -------------------------------------------------------
+       Wheel
+    ------------------------------------------------------- */
 
     svg.addEventListener(
 
@@ -2569,6 +2579,7 @@ window.RelationUI = (() => {
 
 
         const factor =
+
           event.deltaY > 0
 
             ? 0.88
@@ -2597,9 +2608,9 @@ window.RelationUI = (() => {
     );
 
 
-    /* =======================================================
-       双击重置
-       ======================================================= */
+    /* -------------------------------------------------------
+       Double Click
+    ------------------------------------------------------- */
 
     svg.addEventListener(
       'dblclick',
@@ -2619,7 +2630,7 @@ window.RelationUI = (() => {
 
 
   /* =========================================================
-     顶部工具按钮
+     顶部缩放工具
      ========================================================= */
 
   function bindToolbar() {
@@ -2642,9 +2653,9 @@ window.RelationUI = (() => {
       );
 
 
-    /* =======================================================
+    /* -------------------------------------------------------
        放大
-       ======================================================= */
+    ------------------------------------------------------- */
 
     if (zoomIn) {
 
@@ -2688,9 +2699,9 @@ window.RelationUI = (() => {
     }
 
 
-    /* =======================================================
+    /* -------------------------------------------------------
        缩小
-       ======================================================= */
+    ------------------------------------------------------- */
 
     if (zoomOut) {
 
@@ -2734,9 +2745,9 @@ window.RelationUI = (() => {
     }
 
 
-    /* =======================================================
+    /* -------------------------------------------------------
        重置
-       ======================================================= */
+    ------------------------------------------------------- */
 
     if (resetBtn) {
 
@@ -2787,13 +2798,13 @@ window.RelationUI = (() => {
   function init() {
 
     /*
-     * 初次绘制。
+     * 首次绘制。
      */
     renderAll();
 
 
     /*
-     * 绑定两张关系图。
+     * 绑定人物/势力关系图。
      */
     bindGraph(
       'faction'
@@ -2806,14 +2817,14 @@ window.RelationUI = (() => {
 
 
     /*
-     * 顶部缩放按钮。
+     * 绑定顶部工具。
      */
     bindToolbar();
 
 
-    /* =======================================================
-       时间轴变化
-       ======================================================= */
+    /* -------------------------------------------------------
+       WorldState
+    ------------------------------------------------------- */
 
     WorldState.on(
       reason => {
@@ -2854,9 +2865,9 @@ window.RelationUI = (() => {
     );
 
 
-    /* =======================================================
-       浏览器窗口尺寸变化
-       ======================================================= */
+    /* -------------------------------------------------------
+       浏览器大小改变
+    ------------------------------------------------------- */
 
     window.addEventListener(
       'resize',
@@ -2884,7 +2895,7 @@ window.RelationUI = (() => {
   function renderAll() {
 
     /*
-     * 势力关系
+     * 势力关系。
      */
     renderGraph(
 
@@ -2902,7 +2913,7 @@ window.RelationUI = (() => {
 
 
     /*
-     * 人物关系
+     * 人物关系。
      */
     renderGraph(
 
@@ -2919,22 +2930,16 @@ window.RelationUI = (() => {
     );
 
 
-    /*
-     * 顶部隐藏描述信息。
-     */
     updateDescriptions();
 
 
-    /*
-     * 保持选中状态。
-     */
     syncSelectionVisuals();
 
   }
 
 
   /* =========================================================
-     对外 API
+     对外接口
      ========================================================= */
 
   return {
