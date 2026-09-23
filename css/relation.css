@@ -1,75 +1,97 @@
 .graph-large-wrap{
-  display:flex;
-  flex-direction:column;
-  align-items:stretch;
+  position:absolute;
+
+  inset:0;
 
   width:100%;
+  height:100%;
+
+  display:block;
+
+  margin:0;
+  padding:0;
 
   min-width:0;
-
-  gap:18px;
-
-  padding-top:8px;
+  min-height:0;
 
   border:none;
   box-shadow:none;
+
+  overflow:hidden;
 }
 
 
 /* ============================================================
    关系图 SVG
+   作为整个信息页面的最底层画布
 ============================================================ */
 
 .graph-large-svg{
+  position:absolute;
+
+  inset:0;
+
   display:block;
 
   width:100%;
+  height:100%;
 
   max-width:none;
+  max-height:none;
+
+  min-width:0;
+  min-height:0;
 
   /*
-   * 让关系图达到类似世界地图的视觉面积
+   * 让 SVG 完整填充整个视图。
    */
-  height:calc(100vh - 320px);
-
-  min-height:520px;
-
-  max-height:820px;
-
   box-sizing:border-box;
 
-  background:rgba(15,20,26,.35);
+  /*
+   * 取消之前的内边距。
+   */
+  padding:0;
 
   /*
-   * 移除人物关系图 / 势力关系图边框
+   * 取消关系图外框。
    */
   border:none !important;
 
-  border-radius:14px;
-
-  padding:18px 10px;
+  border-radius:0;
 
   /*
-   * 关系图本身负责缩放、拖动
+   * 关系图背景。
+   */
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(28,35,44,.28),
+      rgba(15,20,26,.12) 55%,
+      rgba(15,20,26,.02) 100%
+    );
+
+  /*
+   * 让 SVG 内容铺满整个 viewport。
+   */
+  preserveAspectRatio:none;
+
+  /*
+   * 交互。
    */
   cursor:grab;
 
-  /*
-   * 禁止浏览器把拖动关系图解释成页面滚动
-   */
   touch-action:none;
 
-  /*
-   * 禁止拖动时选中文字
-   */
   user-select:none;
 
-  /*
-   * 防止滚动链影响外层页面
-   */
   overscroll-behavior:contain;
 
   overflow:hidden;
+
+  /*
+   * 最底层关系图。
+   */
+  z-index:0;
 }
 
 
@@ -83,7 +105,7 @@
 
 
 /*
- * 悬停时也不要出现边框
+ * 悬停时仍然没有边框。
  */
 .graph-large-svg:hover{
   border:none !important;
@@ -92,26 +114,66 @@
 
 /* ============================================================
    图例
+   图例浮在关系图之上，
+   但仍低于顶部栏 / 左侧导航 / 右侧详情。
 ============================================================ */
 
 .graph-legend{
+  position:absolute;
+
+  left:50%;
+  bottom:36px;
+
+  transform:
+    translateX(-50%);
+
+  z-index:2;
+
   display:flex;
+
   flex-wrap:wrap;
 
   justify-content:center;
   align-items:center;
 
-  gap:14px 28px;
+  gap:12px 28px;
 
-  width:100%;
+  width:auto;
+  max-width:calc(100% - 40px);
+
+  padding:
+    8px
+    14px;
+
+  background:
+    rgba(22,27,34,.58);
+
+  border:
+    1px solid
+    rgba(58,68,80,.45);
+
+  border-radius:10px;
+
+  backdrop-filter:
+    blur(10px);
+
+  box-shadow:
+    0 6px 22px
+    rgba(0,0,0,.22);
 
   font-size:11px;
+
   color:var(--muted);
+
+  pointer-events:none;
+
+  user-select:none;
 }
 
 
 .graph-legend-item{
   display:flex;
+
   align-items:center;
 
   gap:7px;
@@ -127,6 +189,10 @@
   border-radius:50%;
 
   flex-shrink:0;
+
+  box-shadow:
+    0 0 7px
+    currentColor;
 }
 
 
@@ -282,6 +348,16 @@
 ============================================================ */
 
 .graph-note{
+  position:absolute;
+
+  left:50%;
+  bottom:12px;
+
+  transform:
+    translateX(-50%);
+
+  z-index:2;
+
   font-size:10px;
 
   color:#606c79;
@@ -289,36 +365,27 @@
   text-align:center;
 
   line-height:1.8;
+
+  pointer-events:none;
 }
 
 
 /* ============================================================
-   桌面端大屏
+   桌面端
 ============================================================ */
 
 @media(min-width:1100px){
 
-  .graph-large-wrap{
-    gap:20px;
-  }
-
-
   .graph-large-svg{
-
-    height:calc(100vh - 300px);
-
-    min-height:600px;
-
-    max-height:860px;
-
-    padding:
-      20px
-      12px;
+    width:100%;
+    height:100%;
   }
-
 
   .graph-legend{
-    gap:16px 32px;
+    bottom:32px;
+
+    gap:
+      14px 32px;
 
     font-size:11px;
   }
@@ -332,23 +399,16 @@
 
 @media(min-width:1600px){
 
-  .graph-large-svg{
+  .graph-legend{
+    bottom:36px;
 
-    height:calc(100vh - 290px);
-
-    max-height:900px;
+    gap:
+      16px 38px;
 
     padding:
-      24px
-      16px;
-  }
-
-
-  .graph-legend{
+      9px 18px;
 
     font-size:12px;
-
-    gap:18px 36px;
   }
 
 }
@@ -360,76 +420,52 @@
 
 @media(max-width:1100px){
 
-  .graph-large-wrap{
-    gap:16px;
-  }
-
-
-  .graph-large-svg{
-
-    width:100%;
-
-    height:calc(100vh - 340px);
-
-    min-height:480px;
-
-    max-height:760px;
-
-    padding:
-      16px
-      8px;
-  }
-
-
   .graph-legend{
-    gap:12px 20px;
+    bottom:30px;
+
+    max-width:
+      calc(100% - 30px);
+
+    gap:
+      10px 20px;
+
+    font-size:10px;
   }
 
 }
 
 
 /* ============================================================
-   平板 / 小屏幕
+   平板 / 手机
 ============================================================ */
 
 @media(max-width:720px){
 
-  .graph-large-wrap{
-
-    gap:14px;
-
-    padding-top:4px;
-  }
-
-
   .graph-large-svg{
-
     width:100%;
+    height:100%;
 
-    height:calc(100vh - 420px);
-
-    min-height:360px;
-
-    max-height:none;
-
-    padding:
-      10px
-      4px;
-
-    border-radius:12px;
+    border-radius:0;
   }
 
 
   .graph-legend{
+    bottom:20px;
 
-    gap:10px 18px;
+    max-width:
+      calc(100% - 24px);
 
-    font-size:10px;
+    padding:
+      7px 10px;
+
+    gap:
+      8px 14px;
+
+    font-size:9.5px;
   }
 
 
   .graph-legend-dot{
-
     width:7px;
     height:7px;
   }
@@ -443,23 +479,19 @@
 
 @media(max-width:480px){
 
-  .graph-large-svg{
+  .graph-legend{
+    bottom:14px;
 
-    height:340px;
+    max-width:
+      calc(100% - 16px);
 
-    min-height:340px;
+    gap:
+      6px 10px;
 
     padding:
-      8px
-      2px;
-  }
+      6px 8px;
 
-
-  .graph-legend{
-
-    gap:8px 14px;
-
-    font-size:9.5px;
+    font-size:9px;
   }
 
 }
