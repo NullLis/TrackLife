@@ -5,18 +5,12 @@
 
   width:100%;
 
-  /*
-   * 让关系图尽可能占满页面
-   */
   min-width:0;
 
   gap:18px;
 
   padding-top:8px;
 
-  /*
-   * 移除关系图容器边框与阴影
-   */
   border:none;
   box-shadow:none;
 }
@@ -29,14 +23,8 @@
 .graph-large-svg{
   display:block;
 
-  /*
-   * 直接占满信息页面宽度
-   */
   width:100%;
 
-  /*
-   * 不再限制 760px
-   */
   max-width:none;
 
   /*
@@ -44,19 +32,10 @@
    */
   height:calc(100vh - 320px);
 
-  /*
-   * 防止窗口较小时高度过低
-   */
   min-height:520px;
 
-  /*
-   * 同时限制极端超高屏幕
-   */
   max-height:820px;
 
-  /*
-   * 保持宽高稳定
-   */
   box-sizing:border-box;
 
   background:rgba(15,20,26,.35);
@@ -68,9 +47,6 @@
 
   border-radius:14px;
 
-  /*
-   * 增加一点内部空间
-   */
   padding:18px 10px;
 
   /*
@@ -93,9 +69,6 @@
    */
   overscroll-behavior:contain;
 
-  /*
-   * 防止 SVG 出现默认空白
-   */
   overflow:hidden;
 }
 
@@ -329,10 +302,9 @@
     gap:20px;
   }
 
+
   .graph-large-svg{
-    /*
-     * 大屏幕进一步增加关系图面积
-     */
+
     height:calc(100vh - 300px);
 
     min-height:600px;
@@ -344,11 +316,13 @@
       12px;
   }
 
+
   .graph-legend{
     gap:16px 32px;
 
     font-size:11px;
   }
+
 }
 
 
@@ -359,9 +333,7 @@
 @media(min-width:1600px){
 
   .graph-large-svg{
-    /*
-     * 超宽屏时保持非常大的关系图区域
-     */
+
     height:calc(100vh - 290px);
 
     max-height:900px;
@@ -371,11 +343,14 @@
       16px;
   }
 
+
   .graph-legend{
+
     font-size:12px;
 
     gap:18px 36px;
   }
+
 }
 
 
@@ -389,7 +364,9 @@
     gap:16px;
   }
 
+
   .graph-large-svg{
+
     width:100%;
 
     height:calc(100vh - 340px);
@@ -403,9 +380,11 @@
       8px;
   }
 
+
   .graph-legend{
     gap:12px 20px;
   }
+
 }
 
 
@@ -416,6 +395,7 @@
 @media(max-width:720px){
 
   .graph-large-wrap{
+
     gap:14px;
 
     padding-top:4px;
@@ -423,11 +403,9 @@
 
 
   .graph-large-svg{
+
     width:100%;
 
-    /*
-     * 移动端不要占满到把时间轴完全挤掉
-     */
     height:calc(100vh - 420px);
 
     min-height:360px;
@@ -443,6 +421,7 @@
 
 
   .graph-legend{
+
     gap:10px 18px;
 
     font-size:10px;
@@ -450,9 +429,11 @@
 
 
   .graph-legend-dot{
+
     width:7px;
     height:7px;
   }
+
 }
 
 
@@ -463,6 +444,7 @@
 @media(max-width:480px){
 
   .graph-large-svg{
+
     height:340px;
 
     min-height:340px;
@@ -474,8 +456,10 @@
 
 
   .graph-legend{
+
     gap:8px 14px;
 
     font-size:9.5px;
   }
+
 }
