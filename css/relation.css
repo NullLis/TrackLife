@@ -15,18 +15,21 @@
   min-height:0;
 
   border:none;
+
   box-shadow:none;
 
   overflow:hidden;
+
+  z-index:0;
 }
 
 
 /* ============================================================
    关系图 SVG
-   作为整个信息页面的最底层画布
 ============================================================ */
 
 .graph-large-svg{
+
   position:absolute;
 
   inset:0;
@@ -42,41 +45,27 @@
   min-width:0;
   min-height:0;
 
-  /*
-   * 让 SVG 完整填充整个视图。
-   */
   box-sizing:border-box;
 
-  /*
-   * 取消之前的内边距。
-   */
   padding:0;
 
-  /*
-   * 取消关系图外框。
-   */
   border:none !important;
 
   border-radius:0;
 
-  /*
-   * 关系图背景。
-   */
   background:
     radial-gradient(
-      circle at 50% 50%,
-      rgba(28,35,44,.28),
-      rgba(15,20,26,.12) 55%,
+      circle at 50% 48%,
+      rgba(38,48,60,.30),
+      rgba(15,20,26,.12) 58%,
       rgba(15,20,26,.02) 100%
     );
 
   /*
-   * 让 SVG 内容铺满整个 viewport。
-   */
-  preserveAspectRatio:none;
-
-  /*
-   * 交互。
+   * 保持 SVG 内部比例。
+   *
+   * index.html 同时使用：
+   * preserveAspectRatio="xMidYMid meet"
    */
   cursor:grab;
 
@@ -88,111 +77,17 @@
 
   overflow:hidden;
 
-  /*
-   * 最底层关系图。
-   */
   z-index:0;
 }
 
-
-/* ============================================================
-   拖拽状态
-============================================================ */
 
 .graph-large-svg.graph-pan-active{
   cursor:grabbing;
 }
 
 
-/*
- * 悬停时仍然没有边框。
- */
 .graph-large-svg:hover{
   border:none !important;
-}
-
-
-/* ============================================================
-   图例
-   图例浮在关系图之上，
-   但仍低于顶部栏 / 左侧导航 / 右侧详情。
-============================================================ */
-
-.graph-legend{
-  position:absolute;
-
-  left:50%;
-  bottom:36px;
-
-  transform:
-    translateX(-50%);
-
-  z-index:2;
-
-  display:flex;
-
-  flex-wrap:wrap;
-
-  justify-content:center;
-  align-items:center;
-
-  gap:12px 28px;
-
-  width:auto;
-  max-width:calc(100% - 40px);
-
-  padding:
-    8px
-    14px;
-
-  background:
-    rgba(22,27,34,.58);
-
-  border:
-    1px solid
-    rgba(58,68,80,.45);
-
-  border-radius:10px;
-
-  backdrop-filter:
-    blur(10px);
-
-  box-shadow:
-    0 6px 22px
-    rgba(0,0,0,.22);
-
-  font-size:11px;
-
-  color:var(--muted);
-
-  pointer-events:none;
-
-  user-select:none;
-}
-
-
-.graph-legend-item{
-  display:flex;
-
-  align-items:center;
-
-  gap:7px;
-
-  white-space:nowrap;
-}
-
-
-.graph-legend-dot{
-  width:8px;
-  height:8px;
-
-  border-radius:50%;
-
-  flex-shrink:0;
-
-  box-shadow:
-    0 0 7px
-    currentColor;
 }
 
 
@@ -201,34 +96,45 @@
 ============================================================ */
 
 .rel-edge{
+
   transition:
-    opacity .18s ease;
+    opacity .18s ease,
+    stroke-width .18s ease;
 }
 
 
 .rel-edge.future{
-  opacity:.14;
+  opacity:.10;
 }
 
 
 .rel-edge-ended{
-  opacity:.34;
+  opacity:.28;
+}
+
+
+.graph-large-svg:hover
+.rel-edge:not(.future){
+  stroke-opacity:.96;
 }
 
 
 /* ============================================================
-   关系线文字
+   关系文字
 ============================================================ */
 
 .rel-edge-label{
+
   font-family:
     "PingFang SC",
     "Microsoft YaHei",
     sans-serif;
 
-  font-size:9.5px;
+  font-size:7px;
 
-  fill:#7d8896;
+  font-weight:500;
+
+  fill:#919ba8;
 
   text-anchor:middle;
 
@@ -238,17 +144,20 @@
 
   stroke:#0e1116;
 
-  stroke-width:2.5px;
+  stroke-width:2px;
 
   stroke-linejoin:round;
+
+  opacity:.9;
 }
 
 
 /* ============================================================
-   关系节点
+   节点
 ============================================================ */
 
 .rel-node{
+
   cursor:pointer;
 
   transition:
@@ -266,52 +175,196 @@
 }
 
 
-.rel-node circle{
-  transition:
-    r .15s ease,
-    filter .15s ease,
-    stroke-width .15s ease;
+.rel-node:hover{
+  opacity:1;
 }
 
 
-.rel-node:hover circle.dot{
-  r:11;
+.rel-node circle{
+  transition:
+    r .16s ease,
+    filter .16s ease,
+    stroke-width .16s ease,
+    opacity .16s ease;
+}
+
+
+/* ============================================================
+   节点光晕
+============================================================ */
+
+.rel-halo{
+
+  opacity:.14;
+
+  pointer-events:none;
+
+  transition:
+    r .18s ease,
+    opacity .18s ease,
+    filter .18s ease;
+}
+
+
+.rel-node:hover
+.rel-halo{
+
+  opacity:.24;
 
   filter:
     drop-shadow(
-      0 0 8px currentColor
+      0 0 10px currentColor
     );
 }
 
 
-.rel-node.selected circle.dot{
-  r:11;
+/* ============================================================
+   节点外环
+============================================================ */
 
-  stroke:var(--gold);
+.rel-ring{
+
+  pointer-events:none;
+
+  transition:
+    r .16s ease,
+    stroke-width .16s ease;
+}
+
+
+.rel-node:hover
+.rel-ring{
 
   stroke-width:3;
 
   filter:
     drop-shadow(
+      0 0 6px currentColor
+    );
+}
+
+
+/* ============================================================
+   节点核心
+============================================================ */
+
+.rel-node
+.dot{
+
+  pointer-events:none;
+
+  transition:
+    r .16s ease,
+    filter .16s ease;
+}
+
+
+.rel-node:hover
+.dot{
+
+  r:9;
+
+  filter:
+    drop-shadow(
       0 0 8px currentColor
     );
 }
 
 
-.rel-node.selected .rel-name{
-  fill:var(--gold);
+.rel-core{
+
+  pointer-events:none;
 }
 
 
 /* ============================================================
-   节点文字
+   状态小圆点
 ============================================================ */
 
-.rel-node text{
+.rel-state-dot{
+
+  pointer-events:none;
+
+  transition:
+    r .15s ease,
+    filter .15s ease;
+}
+
+
+.rel-node:hover
+.rel-state-dot{
+
+  r:4.5;
+
+  filter:
+    drop-shadow(
+      0 0 5px currentColor
+    );
+}
+
+
+/* ============================================================
+   节点标签底板
+============================================================ */
+
+.rel-label-bg{
+
+  fill:
+    rgba(10,14,19,.82);
+
+  stroke:
+    rgba(92,105,120,.45);
+
+  stroke-width:1;
+
+  pointer-events:none;
+
+  transition:
+    fill .16s ease,
+    stroke .16s ease;
+}
+
+
+.rel-node:hover
+.rel-label-bg{
+
+  fill:
+    rgba(17,23,30,.94);
+
+  stroke:
+    rgba(212,167,106,.42);
+}
+
+
+.rel-node.selected
+.rel-label-bg{
+
+  fill:
+    rgba(48,38,24,.92);
+
+  stroke:
+    rgba(212,167,106,.72);
+
+  stroke-width:1.2;
+}
+
+
+/* ============================================================
+   节点名称
+============================================================ */
+
+.rel-name{
+
   font-family:
     "PingFang SC",
     "Microsoft YaHei",
     sans-serif;
+
+  font-size:8px;
+
+  font-weight:700;
+
+  fill:#eef3f8;
 
   text-anchor:middle;
 
@@ -321,73 +374,287 @@
 
   stroke:#0e1116;
 
-  stroke-width:3px;
+  stroke-width:1.8px;
+
+  stroke-linejoin:round;
+
+  letter-spacing:.2px;
+}
+
+
+.rel-node:hover
+.rel-name{
+
+  fill:#ffffff;
+}
+
+
+.rel-node.selected
+.rel-name{
+
+  fill:var(--gold);
+}
+
+
+/* ============================================================
+   节点身份 / 当前状态
+============================================================ */
+
+.rel-role{
+
+  font-family:
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+
+  font-size:5.5px;
+
+  font-weight:500;
+
+  fill:#8995a3;
+
+  text-anchor:middle;
+
+  pointer-events:none;
+
+  paint-order:stroke;
+
+  stroke:#0e1116;
+
+  stroke-width:1.2px;
 
   stroke-linejoin:round;
 }
 
 
-.rel-name{
-  font-size:12px;
+.rel-node:hover
+.rel-role{
 
-  fill:#dde4ec;
-
-  font-weight:500;
+  fill:#abb5c0;
 }
 
 
+.rel-node.selected
 .rel-role{
-  font-size:9.5px;
 
-  fill:#7d8896;
+  fill:#c3a978;
 }
 
 
 /* ============================================================
-   说明文字
+   人物节点
 ============================================================ */
 
-.graph-note{
+.character-node
+.rel-ring{
+
+  stroke-width:2;
+}
+
+
+.character-node
+.rel-label-bg{
+
+  rx:7;
+}
+
+
+/* ============================================================
+   势力节点
+============================================================ */
+
+.faction-node
+.rel-ring{
+
+  stroke-width:2.4;
+}
+
+
+.faction-node
+.rel-label-bg{
+
+  rx:8;
+}
+
+
+/* ============================================================
+   选中状态
+============================================================ */
+
+.rel-node.selected
+.dot{
+
+  r:9;
+
+  stroke:
+    var(--gold);
+
+  stroke-width:2.2;
+
+  filter:
+    drop-shadow(
+      0 0 9px currentColor
+    );
+}
+
+
+.rel-node.selected
+.rel-ring{
+
+  r:13;
+
+  stroke:
+    var(--gold);
+
+  stroke-width:3;
+}
+
+
+.rel-node.selected
+.rel-halo{
+
+  r:23;
+
+  opacity:.26;
+
+  filter:
+    drop-shadow(
+      0 0 12px currentColor
+    );
+}
+
+
+/* ============================================================
+   图例
+============================================================ */
+
+.graph-legend{
+
   position:absolute;
 
   left:50%;
-  bottom:12px;
+
+  bottom:32px;
 
   transform:
     translateX(-50%);
 
   z-index:2;
 
+  display:flex;
+
+  flex-wrap:wrap;
+
+  justify-content:center;
+
+  align-items:center;
+
+  gap:10px 24px;
+
+  width:auto;
+
+  max-width:
+    calc(100% - 40px);
+
+  padding:
+    7px 13px;
+
+  background:
+    rgba(22,27,34,.54);
+
+  border:
+    1px solid
+    rgba(58,68,80,.38);
+
+  border-radius:9px;
+
+  backdrop-filter:
+    blur(10px);
+
+  box-shadow:
+    0 5px 18px
+    rgba(0,0,0,.18);
+
   font-size:10px;
 
-  color:#606c79;
+  color:var(--muted);
+
+  pointer-events:none;
+
+  user-select:none;
+}
+
+
+.graph-legend-item{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:6px;
+
+  white-space:nowrap;
+}
+
+
+.graph-legend-dot{
+
+  width:7px;
+  height:7px;
+
+  border-radius:50%;
+
+  flex-shrink:0;
+
+  box-shadow:
+    0 0 6px
+    currentColor;
+}
+
+
+/* ============================================================
+   图表说明
+============================================================ */
+
+.graph-note{
+
+  position:absolute;
+
+  left:50%;
+
+  bottom:10px;
+
+  transform:
+    translateX(-50%);
+
+  z-index:2;
+
+  font-size:9px;
+
+  color:#66717f;
 
   text-align:center;
 
-  line-height:1.8;
+  line-height:1.6;
 
   pointer-events:none;
 }
 
 
 /* ============================================================
-   桌面端
+   大屏
 ============================================================ */
 
 @media(min-width:1100px){
 
-  .graph-large-svg{
-    width:100%;
-    height:100%;
-  }
-
   .graph-legend{
-    bottom:32px;
+
+    bottom:30px;
 
     gap:
-      14px 32px;
+      12px 28px;
 
-    font-size:11px;
+    font-size:10px;
   }
 
 }
@@ -400,74 +667,85 @@
 @media(min-width:1600px){
 
   .graph-legend{
-    bottom:36px;
+
+    bottom:34px;
 
     gap:
-      16px 38px;
+      14px 32px;
 
     padding:
-      9px 18px;
+      8px 15px;
 
-    font-size:12px;
+    font-size:11px;
   }
 
 }
 
 
 /* ============================================================
-   中等屏幕
+   平板
 ============================================================ */
 
-@media(max-width:1100px){
+@media(max-width:900px){
+
+  .rel-name{
+    font-size:8px;
+  }
+
+
+  .rel-role{
+    font-size:5.5px;
+  }
+
+
+  .rel-edge-label{
+    font-size:6.5px;
+  }
+
 
   .graph-legend{
-    bottom:30px;
+
+    bottom:24px;
 
     max-width:
       calc(100% - 30px);
 
     gap:
-      10px 20px;
+      8px 18px;
 
-    font-size:10px;
+    font-size:9.5px;
   }
 
 }
 
 
 /* ============================================================
-   平板 / 手机
+   手机
 ============================================================ */
 
 @media(max-width:720px){
 
-  .graph-large-svg{
-    width:100%;
-    height:100%;
-
-    border-radius:0;
-  }
-
-
   .graph-legend{
-    bottom:20px;
+
+    bottom:18px;
 
     max-width:
-      calc(100% - 24px);
+      calc(100% - 22px);
 
     padding:
-      7px 10px;
+      6px 9px;
 
     gap:
-      8px 14px;
+      7px 12px;
 
-    font-size:9.5px;
+    font-size:9px;
   }
 
 
   .graph-legend-dot{
-    width:7px;
-    height:7px;
+
+    width:6px;
+    height:6px;
   }
 
 }
@@ -480,18 +758,19 @@
 @media(max-width:480px){
 
   .graph-legend{
-    bottom:14px;
+
+    bottom:12px;
 
     max-width:
-      calc(100% - 16px);
+      calc(100% - 14px);
 
     gap:
-      6px 10px;
+      5px 9px;
 
     padding:
-      6px 8px;
+      5px 7px;
 
-    font-size:9px;
+    font-size:8.5px;
   }
 
 }
