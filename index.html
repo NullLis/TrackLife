@@ -1,24 +1,59 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>世界地图 · 世界编年史</title>
 
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/map.css">
-  <link rel="stylesheet" href="css/relation.css">
-  <link rel="stylesheet" href="css/timeline.css">
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>
+    世界地图 · 世界编年史
+  </title>
+
+
+  <link
+    rel="stylesheet"
+    href="css/base.css"
+  >
+
+  <link
+    rel="stylesheet"
+    href="css/layout.css"
+  >
+
+  <link
+    rel="stylesheet"
+    href="css/map.css"
+  >
+
+  <link
+    rel="stylesheet"
+    href="css/relation.css"
+  >
+
+  <link
+    rel="stylesheet"
+    href="css/timeline.css"
+  >
+
 </head>
 
+
 <body data-tab="map">
+
 
   <!-- =========================================================
        世界地图
   ========================================================== -->
 
-  <main id="mapBg" aria-label="世界地图画布">
+  <main
+    id="mapBg"
+    aria-label="世界地图画布"
+  >
 
     <div id="mapViewport">
 
@@ -30,24 +65,31 @@
 
         <defs>
 
+
           <!-- 海洋渐变 -->
+
           <radialGradient
             id="oceanGrad"
             cx="50%"
             cy="50%"
             r="75%"
           >
+
             <stop
               offset="0%"
               stop-color="#131a24"
             />
+
             <stop
               offset="100%"
               stop-color="#0b0f15"
             />
+
           </radialGradient>
 
+
           <!-- 北部区域 -->
+
           <linearGradient
             id="landNorth"
             x1="0"
@@ -55,17 +97,22 @@
             x2="0"
             y2="1"
           >
+
             <stop
               offset="0%"
               stop-color="#2a3340"
             />
+
             <stop
               offset="100%"
               stop-color="#1e2531"
             />
+
           </linearGradient>
 
+
           <!-- 中央区域 -->
+
           <linearGradient
             id="landCentral"
             x1="0"
@@ -73,17 +120,22 @@
             x2="0"
             y2="1"
           >
+
             <stop
               offset="0%"
               stop-color="#2e3a35"
             />
+
             <stop
               offset="100%"
               stop-color="#212a28"
             />
+
           </linearGradient>
 
+
           <!-- 西部区域 -->
+
           <linearGradient
             id="landWest"
             x1="0"
@@ -91,17 +143,22 @@
             x2="0"
             y2="1"
           >
+
             <stop
               offset="0%"
               stop-color="#33301f"
             />
+
             <stop
               offset="100%"
               stop-color="#25231a"
             />
+
           </linearGradient>
 
+
           <!-- 东部区域 -->
+
           <linearGradient
             id="landEast"
             x1="0"
@@ -109,17 +166,22 @@
             x2="0"
             y2="1"
           >
+
             <stop
               offset="0%"
               stop-color="#3a2328"
             />
+
             <stop
               offset="100%"
               stop-color="#281a1e"
             />
+
           </linearGradient>
 
+
           <!-- 南部区域 -->
+
           <linearGradient
             id="landSouth"
             x1="0"
@@ -127,17 +189,22 @@
             x2="0"
             y2="1"
           >
+
             <stop
               offset="0%"
               stop-color="#1f2d38"
             />
+
             <stop
               offset="100%"
               stop-color="#172029"
             />
+
           </linearGradient>
 
+
           <!-- 柔光 -->
+
           <filter
             id="softGlow"
             x="-50%"
@@ -145,21 +212,30 @@
             width="200%"
             height="200%"
           >
+
             <feGaussianBlur
               stdDeviation="3"
               result="blur"
             />
 
             <feMerge>
+
               <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
+
+              <feMergeNode
+                in="SourceGraphic"
+              />
+
             </feMerge>
+
           </filter>
+
 
         </defs>
 
 
         <!-- 海洋背景 -->
+
         <rect
           width="1200"
           height="760"
@@ -168,6 +244,7 @@
 
 
         <!-- 地图网格 -->
+
         <g
           class="map-grid"
           stroke="#1a222c"
@@ -221,10 +298,12 @@
 
 
         <!-- 地区 -->
+
         <g id="mapRegions"></g>
 
 
         <!-- 山脉 -->
+
         <g
           stroke="#4a4530"
           stroke-width="1.2"
@@ -232,16 +311,31 @@
           opacity="0.7"
         >
 
-          <path d="M 180,300 L 210,270 L 240,300" />
-          <path d="M 240,310 L 270,275 L 300,310" />
-          <path d="M 300,320 L 330,285 L 360,320" />
-          <path d="M 200,350 L 230,320 L 260,350" />
-          <path d="M 260,360 L 290,325 L 320,360" />
+          <path
+            d="M 180,300 L 210,270 L 240,300"
+          />
+
+          <path
+            d="M 240,310 L 270,275 L 300,310"
+          />
+
+          <path
+            d="M 300,320 L 330,285 L 360,320"
+          />
+
+          <path
+            d="M 200,350 L 230,320 L 260,350"
+          />
+
+          <path
+            d="M 260,360 L 290,325 L 320,360"
+          />
 
         </g>
 
 
         <!-- 河流 -->
+
         <g
           stroke="#2a4a60"
           stroke-width="2"
@@ -249,34 +343,76 @@
           opacity="0.75"
         >
 
-          <path d="M 560,240 Q 600,340 560,420 T 540,540" />
-          <path d="M 540,540 Q 480,580 420,600" />
-          <path d="M 700,320 Q 720,420 680,500" />
+          <path
+            d="M 560,240 Q 600,340 560,420 T 540,540"
+          />
+
+          <path
+            d="M 540,540 Q 480,580 420,600"
+          />
+
+          <path
+            d="M 700,320 Q 720,420 680,500"
+          />
 
         </g>
 
 
         <!-- 森林 / 地形点 -->
+
         <g
           fill="#2a3d35"
           opacity="0.5"
         >
 
-          <circle cx="500" cy="300" r="4" />
-          <circle cx="520" cy="315" r="4" />
-          <circle cx="540" cy="295" r="4" />
-          <circle cx="560" cy="325" r="4" />
-          <circle cx="490" cy="340" r="4" />
-          <circle cx="515" cy="355" r="4" />
+          <circle
+            cx="500"
+            cy="300"
+            r="4"
+          />
+
+          <circle
+            cx="520"
+            cy="315"
+            r="4"
+          />
+
+          <circle
+            cx="540"
+            cy="295"
+            r="4"
+          />
+
+          <circle
+            cx="560"
+            cy="325"
+            r="4"
+          />
+
+          <circle
+            cx="490"
+            cy="340"
+            r="4"
+          />
+
+          <circle
+            cx="515"
+            cy="355"
+            r="4"
+          />
 
         </g>
 
 
         <!-- 地区名称 -->
+
         <g id="mapRegionLabels"></g>
 
+
         <!-- 地图地点 -->
+
         <g id="mapMarkers"></g>
+
 
       </svg>
 
@@ -287,9 +423,7 @@
 
   <!-- =========================================================
        全屏信息页面
-       
-       注意：
-       这里已经移除原来的 .iv-head。
+
        页面标题统一由顶部 .topbar 显示。
   ========================================================== -->
 
@@ -297,17 +431,6 @@
     id="infoView"
     aria-hidden="true"
   >
-
-    <!-- 返回地图 -->
-    <button
-      id="btnBackMap"
-      class="btn-back-map"
-      type="button"
-      aria-label="返回地图"
-    >
-      <span class="arrow">←</span>
-      <span>返回地图</span>
-    </button>
 
 
     <div class="info-view-pages">
@@ -322,7 +445,9 @@
         id="iv-resource"
       >
 
+
         <!-- 资源筛选 -->
+
         <div class="resource-toolbar">
 
           <button
@@ -332,6 +457,7 @@
           >
             已出现
           </button>
+
 
           <button
             class="filter-btn"
@@ -345,6 +471,7 @@
 
 
         <!-- 资源卡片 -->
+
         <div
           class="resource-grid"
           id="resourceGrid"
@@ -358,13 +485,14 @@
           但保留这些 ID 可以避免旧代码
           document.getElementById(...) 返回 null。
         -->
+
         <span
           id="resourcePageDesc"
           hidden
         ></span>
 
-      </section>
 
+      </section>
 
 
       <!-- =====================================================
@@ -376,9 +504,12 @@
         id="iv-faction"
       >
 
+
         <div class="graph-large-wrap">
 
+
           <!-- 势力关系图 -->
+
           <svg
             class="graph-large-svg"
             viewBox="0 0 300 240"
@@ -386,13 +517,16 @@
           >
 
             <g id="factionEdges"></g>
+
             <g id="factionNodes"></g>
 
           </svg>
 
 
           <!-- 势力图例 -->
+
           <div class="graph-legend">
+
 
             <div class="graph-legend-item">
 
@@ -441,19 +575,22 @@
 
             </div>
 
+
           </div>
+
 
         </div>
 
 
         <!-- 保留给 JS 使用 -->
+
         <span
           id="factionPageDesc"
           hidden
         ></span>
 
-      </section>
 
+      </section>
 
 
       <!-- =====================================================
@@ -465,9 +602,12 @@
         id="iv-relation"
       >
 
+
         <div class="graph-large-wrap">
 
+
           <!-- 人物关系图 -->
+
           <svg
             class="graph-large-svg"
             viewBox="0 0 300 240"
@@ -475,13 +615,16 @@
           >
 
             <g id="relationEdges"></g>
+
             <g id="relationNodes"></g>
 
           </svg>
 
 
           <!-- 人物关系图例 -->
+
           <div class="graph-legend">
+
 
             <div class="graph-legend-item">
 
@@ -530,23 +673,27 @@
 
             </div>
 
+
           </div>
+
 
         </div>
 
 
         <!-- 保留给 JS 使用 -->
+
         <span
           id="relationPageDesc"
           hidden
         ></span>
 
+
       </section>
+
 
     </div>
 
   </section>
-
 
 
   <!-- =========================================================
@@ -562,11 +709,14 @@
 
     <header class="topbar">
 
+
       <div class="logo">
+
 
         <div class="logo-mark">
           墨
         </div>
+
 
         <div
           class="logo-text"
@@ -574,6 +724,7 @@
         >
           世界地图
         </div>
+
 
       </div>
 
@@ -598,13 +749,19 @@
         id="topbarTools"
       >
 
+
         <button
           class="btn-tool"
           id="zoomInBtn"
           type="button"
         >
+
           <span>＋</span>
-          <span class="tool-text">放大</span>
+
+          <span class="tool-text">
+            放大
+          </span>
+
         </button>
 
 
@@ -613,8 +770,13 @@
           id="zoomOutBtn"
           type="button"
         >
+
           <span>－</span>
-          <span class="tool-text">缩小</span>
+
+          <span class="tool-text">
+            缩小
+          </span>
+
         </button>
 
 
@@ -623,14 +785,20 @@
           id="resetViewBtn"
           type="button"
         >
+
           <span>⟲</span>
-          <span class="tool-text">重置</span>
+
+          <span class="tool-text">
+            重置
+          </span>
+
         </button>
+
 
       </div>
 
-    </header>
 
+    </header>
 
 
     <!-- =======================================================
@@ -643,26 +811,32 @@
       aria-label="信息导航"
     >
 
+
       <button
         class="tabs-toggle"
         id="tabsToggle"
         type="button"
         title="收起/展开标签"
       >
+
         <span class="arrow">
           ◀
         </span>
+
       </button>
 
 
       <div class="info-tabs-side">
 
+
         <!-- 世界地图 -->
+
         <button
           class="info-tab active"
           data-tab="map"
           type="button"
         >
+
           <span class="info-tab-icon">
             🌐
           </span>
@@ -670,6 +844,7 @@
           <span class="info-tab-label">
             世界地图
           </span>
+
         </button>
 
 
@@ -677,11 +852,13 @@
 
 
         <!-- 地点资源 -->
+
         <button
           class="info-tab"
           data-tab="resource"
           type="button"
         >
+
           <span class="info-tab-icon">
             ◆
           </span>
@@ -689,15 +866,18 @@
           <span class="info-tab-label">
             地点资源
           </span>
+
         </button>
 
 
         <!-- 势力关系 -->
+
         <button
           class="info-tab"
           data-tab="faction"
           type="button"
         >
+
           <span class="info-tab-icon">
             ⬢
           </span>
@@ -705,15 +885,18 @@
           <span class="info-tab-label">
             势力关系
           </span>
+
         </button>
 
 
         <!-- 人物关系 -->
+
         <button
           class="info-tab"
           data-tab="relation"
           type="button"
         >
+
           <span class="info-tab-icon">
             ◉
           </span>
@@ -721,12 +904,13 @@
           <span class="info-tab-label">
             人物关系
           </span>
+
         </button>
+
 
       </div>
 
     </nav>
-
 
 
     <!-- =======================================================
@@ -738,6 +922,7 @@
       id="mapSidebar"
       aria-label="右侧详情"
     >
+
 
       <button
         class="sidebar-handle"
@@ -759,8 +944,8 @@
 
       <div id="sidebarContent"></div>
 
-    </aside>
 
+    </aside>
 
 
     <!-- =======================================================
@@ -771,6 +956,7 @@
       class="map-legend"
       id="mapLegend"
     >
+
 
       <div class="legend-item">
 
@@ -831,8 +1017,8 @@
 
       </div>
 
-    </div>
 
+    </div>
 
 
     <!-- =======================================================
@@ -844,11 +1030,14 @@
       aria-label="时间轴"
     >
 
+
       <div class="map-timeline-head">
+
 
         <span class="map-timeline-label">
           时间进度
         </span>
+
 
         <strong
           class="map-timeline-year"
@@ -857,10 +1046,12 @@
           天启七年
         </strong>
 
+
       </div>
 
 
       <!-- 时间轴事件 -->
+
       <div
         class="timeline-events"
         id="timelineEvents"
@@ -868,9 +1059,12 @@
 
 
       <!-- 时间轴轨道 -->
+
       <div class="map-timeline-track">
 
+
         <div class="map-timeline-rail"></div>
+
 
         <div
           class="map-timeline-fill"
@@ -895,12 +1089,14 @@
           id="timelineTicks"
         >
 
+
           <button
             type="button"
             data-year="1"
           >
             元年
           </button>
+
 
           <button
             type="button"
@@ -909,12 +1105,14 @@
             二年
           </button>
 
+
           <button
             type="button"
             data-year="3"
           >
             三年
           </button>
+
 
           <button
             type="button"
@@ -923,12 +1121,14 @@
             四年
           </button>
 
+
           <button
             type="button"
             data-year="5"
           >
             五年
           </button>
+
 
           <button
             type="button"
@@ -937,6 +1137,7 @@
             六年
           </button>
 
+
           <button
             type="button"
             data-year="7"
@@ -944,21 +1145,25 @@
             七年
           </button>
 
+
         </div>
+
 
       </div>
 
 
       <!-- 时间轴统计 -->
+
       <div
         class="map-timeline-stat"
         id="timelineStats"
       ></div>
 
+
     </section>
 
-  </div>
 
+  </div>
 
 
   <!-- =========================================================
@@ -971,7 +1176,6 @@
     role="status"
     aria-live="polite"
   ></div>
-
 
 
   <!-- =========================================================
@@ -997,4 +1201,5 @@
   <script src="js/app.js"></script>
 
 </body>
+
 </html>
