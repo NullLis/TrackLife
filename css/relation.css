@@ -1,5 +1,6 @@
+```css
 /* =========================================================
-   关系图容器
+   关系图整体容器
    ========================================================= */
 
 .graph-large-wrap {
@@ -9,29 +10,34 @@
   width: 100%;
   height: 100%;
 
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-
-  padding: 0;
   margin: 0;
+  padding: 0;
+
+  display: block;
 
   pointer-events: none;
+
+  overflow: hidden;
 }
+
+
+/* =========================================================
+   SVG 关系图画布
+   ========================================================= */
 
 .graph-large-svg {
   position: absolute;
   inset: 0;
-
-  display: block;
 
   width: 100%;
   height: 100%;
 
   max-width: none;
 
-  padding: 0;
+  display: block;
+
   margin: 0;
+  padding: 0;
 
   background: transparent;
 
@@ -42,14 +48,26 @@
 
   pointer-events: auto;
 
+  /*
+   * 禁止浏览器把触摸拖拽解释成网页滚动。
+   * 这样手机 / 平板也可以拖动关系图。
+   */
   touch-action: none;
 
-  cursor: default;
+  cursor: grab;
+
+  user-select: none;
+
+  -webkit-user-select: none;
+}
+
+.graph-large-svg.is-dragging {
+  cursor: grabbing;
 }
 
 
 /* =========================================================
-   关系线
+   关系边
    ========================================================= */
 
 .rel-edge {
@@ -58,6 +76,8 @@
   transition:
     opacity .18s ease,
     stroke-width .18s ease;
+
+  pointer-events: none;
 }
 
 .rel-edge.future {
@@ -67,6 +87,11 @@
 .rel-edge-ended {
   opacity: .34;
 }
+
+
+/* =========================================================
+   关系文字
+   ========================================================= */
 
 .rel-edge-label {
   font-family:
@@ -85,9 +110,12 @@
   paint-order: stroke;
 
   stroke: #0e1116;
+
   stroke-width: 2.5px;
 
   stroke-linejoin: round;
+
+  user-select: none;
 }
 
 
@@ -100,9 +128,12 @@
 
   pointer-events: all;
 
+  user-select: none;
+
+  -webkit-user-select: none;
+
   transition:
-    opacity .18s ease,
-    transform .18s ease;
+    opacity .18s ease;
 }
 
 .rel-node.future {
@@ -115,7 +146,7 @@
 
 
 /* =========================================================
-   点击区域
+   节点点击范围
    ========================================================= */
 
 .rel-hit {
@@ -125,20 +156,26 @@
 
   fill: #ffffff;
 
+  /*
+   * 不是 display:none。
+   * 必须保留真正可 hit-test 的 SVG 图形。
+   */
   fill-opacity: .001;
+
+  stroke: none;
 }
 
 
 /* =========================================================
-   节点光晕
+   光晕
    ========================================================= */
 
 .rel-halo {
   pointer-events: none;
 
   transition:
-    opacity .18s ease,
-    r .18s ease;
+    opacity .16s ease,
+    r .16s ease;
 }
 
 .rel-node:hover .rel-halo {
@@ -161,7 +198,7 @@
 
 
 /* =========================================================
-   节点主体
+   节点圆点
    ========================================================= */
 
 .rel-core,
@@ -174,8 +211,8 @@
     stroke-width .16s ease;
 }
 
-.rel-node:hover .dot,
-.rel-node:hover .rel-core {
+.rel-node:hover .rel-core,
+.rel-node:hover .dot {
   r: 10;
 
   filter:
@@ -207,14 +244,14 @@
 }
 
 .rel-node:hover .rel-label-bg {
-  fill-opacity: .96;
+  fill-opacity: .95;
 
-  stroke-opacity: .48;
+  stroke-opacity: .5;
 }
 
 
 /* =========================================================
-   人物 / 势力名称
+   节点文字
    ========================================================= */
 
 .rel-node text {
@@ -261,11 +298,11 @@
 
 
 /* =========================================================
-   当前选中的节点
+   选中节点
    ========================================================= */
 
-.rel-node.selected .dot,
-.rel-node.selected .rel-core {
+.rel-node.selected .rel-core,
+.rel-node.selected .dot {
   r: 11;
 
   stroke: var(--gold);
@@ -285,7 +322,7 @@
 
   stroke-width: 1.5;
 
-  opacity: .8;
+  opacity: .82;
 }
 
 .rel-node.selected .rel-name {
@@ -308,7 +345,7 @@
 
 
 /* =========================================================
-   鼠标悬浮
+   悬浮效果
    ========================================================= */
 
 .rel-node:hover .rel-name {
@@ -332,7 +369,7 @@
 
   transform: translateX(-50%);
 
-  z-index: 3;
+  z-index: 4;
 
   display: flex;
 
@@ -346,9 +383,12 @@
 
   border-radius: 10px;
 
-  background: rgba(14, 18, 24, .72);
+  background:
+    rgba(14, 18, 24, .72);
 
-  border: 1px solid rgba(70, 82, 96, .45);
+  border:
+    1px solid
+    rgba(70, 82, 96, .45);
 
   backdrop-filter: blur(10px);
 
@@ -371,23 +411,25 @@
   width: 8px;
   height: 8px;
 
+  flex: 0 0 auto;
+
   border-radius: 50%;
 }
 
 
 /* =========================================================
-   辅助说明
+   关系图说明
    ========================================================= */
 
 .graph-note {
   position: absolute;
 
   left: 50%;
-  bottom: 8px;
+  bottom: 7px;
 
   transform: translateX(-50%);
 
-  z-index: 3;
+  z-index: 4;
 
   font-size: 10px;
 
@@ -402,7 +444,7 @@
 
 
 /* =========================================================
-   响应式
+   移动端
    ========================================================= */
 
 @media (max-width: 900px) {
@@ -422,8 +464,8 @@
 
     font-size: 10px;
   }
-
 }
+
 
 @media (max-width: 640px) {
 
@@ -436,11 +478,12 @@
   }
 
   .graph-legend {
-    max-width: calc(100% - 30px);
+    max-width:
+      calc(100% - 30px);
 
     bottom: 12px;
 
     gap: 8px 12px;
   }
-
 }
+```
