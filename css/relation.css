@@ -1,10 +1,32 @@
-```css
 /* =========================================================
-   关系图整体容器
+   关系图页面
    ========================================================= */
 
-.graph-large-wrap {
+#iv-faction,
+#iv-relation {
   position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  padding: 0 !important;
+  margin: 0;
+
+  overflow: hidden;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   关系图容器
+   ========================================================= */
+
+#iv-faction .graph-large-wrap,
+#iv-relation .graph-large-wrap {
+  position: absolute;
+
   inset: 0;
 
   width: 100%;
@@ -15,43 +37,44 @@
 
   display: block;
 
-  pointer-events: none;
-
   overflow: hidden;
+
+  pointer-events: auto;
+
+  z-index: 0;
 }
 
 
 /* =========================================================
-   SVG 关系图画布
+   SVG
    ========================================================= */
 
+#iv-faction .graph-large-svg,
+#iv-relation .graph-large-svg,
 .graph-large-svg {
   position: absolute;
+
   inset: 0;
+
+  display: block;
 
   width: 100%;
   height: 100%;
 
   max-width: none;
 
-  display: block;
-
   margin: 0;
   padding: 0;
 
-  background: transparent;
-
   border: 0;
   border-radius: 0;
+
+  background: transparent;
 
   overflow: visible;
 
   pointer-events: auto;
 
-  /*
-   * 禁止浏览器把触摸拖拽解释成网页滚动。
-   * 这样手机 / 平板也可以拖动关系图。
-   */
   touch-action: none;
 
   cursor: grab;
@@ -59,6 +82,8 @@
   user-select: none;
 
   -webkit-user-select: none;
+
+  z-index: 0;
 }
 
 .graph-large-svg.is-dragging {
@@ -67,17 +92,17 @@
 
 
 /* =========================================================
-   关系边
+   关系线
    ========================================================= */
 
 .rel-edge {
+  pointer-events: none;
+
   fill: none;
 
   transition:
     opacity .18s ease,
     stroke-width .18s ease;
-
-  pointer-events: none;
 }
 
 .rel-edge.future {
@@ -90,10 +115,12 @@
 
 
 /* =========================================================
-   关系文字
+   关系线文字
    ========================================================= */
 
 .rel-edge-label {
+  pointer-events: none;
+
   font-family:
     "PingFang SC",
     "Microsoft YaHei",
@@ -104,8 +131,6 @@
   fill: #7d8896;
 
   text-anchor: middle;
-
-  pointer-events: none;
 
   paint-order: stroke;
 
@@ -124,16 +149,13 @@
    ========================================================= */
 
 .rel-node {
-  cursor: pointer;
-
   pointer-events: all;
+
+  cursor: pointer;
 
   user-select: none;
 
   -webkit-user-select: none;
-
-  transition:
-    opacity .18s ease;
 }
 
 .rel-node.future {
@@ -146,7 +168,7 @@
 
 
 /* =========================================================
-   节点点击范围
+   节点点击区域
    ========================================================= */
 
 .rel-hit {
@@ -156,13 +178,11 @@
 
   fill: #ffffff;
 
-  /*
-   * 不是 display:none。
-   * 必须保留真正可 hit-test 的 SVG 图形。
-   */
   fill-opacity: .001;
 
   stroke: none;
+
+  user-select: none;
 }
 
 
@@ -184,7 +204,7 @@
 
 
 /* =========================================================
-   节点外圈
+   外圈
    ========================================================= */
 
 .rel-ring {
@@ -198,7 +218,7 @@
 
 
 /* =========================================================
-   节点圆点
+   主圆点
    ========================================================= */
 
 .rel-core,
@@ -251,18 +271,18 @@
 
 
 /* =========================================================
-   节点文字
+   文字
    ========================================================= */
 
 .rel-node text {
+  pointer-events: none;
+
   font-family:
     "PingFang SC",
     "Microsoft YaHei",
     sans-serif;
 
   text-anchor: middle;
-
-  pointer-events: none;
 
   paint-order: stroke;
 
@@ -278,9 +298,9 @@
 .rel-name {
   font-size: 12px;
 
-  fill: #dde4ec;
-
   font-weight: 600;
+
+  fill: #dde4ec;
 
   transition:
     fill .16s ease,
@@ -298,7 +318,7 @@
 
 
 /* =========================================================
-   选中节点
+   选中
    ========================================================= */
 
 .rel-node.selected .rel-core,
@@ -322,7 +342,7 @@
 
   stroke-width: 1.5;
 
-  opacity: .82;
+  opacity: .8;
 }
 
 .rel-node.selected .rel-name {
@@ -345,7 +365,7 @@
 
 
 /* =========================================================
-   悬浮效果
+   悬停
    ========================================================= */
 
 .rel-node:hover .rel-name {
@@ -361,7 +381,8 @@
    图例
    ========================================================= */
 
-.graph-legend {
+#iv-faction .graph-legend,
+#iv-relation .graph-legend {
   position: absolute;
 
   left: 50%;
@@ -369,13 +390,15 @@
 
   transform: translateX(-50%);
 
-  z-index: 4;
+  z-index: 5;
 
   display: flex;
 
   flex-wrap: wrap;
 
   justify-content: center;
+
+  align-items: center;
 
   gap: 14px 24px;
 
@@ -392,9 +415,9 @@
 
   backdrop-filter: blur(10px);
 
-  font-size: 11px;
-
   color: var(--muted);
+
+  font-size: 11px;
 
   pointer-events: none;
 }
@@ -411,40 +434,14 @@
   width: 8px;
   height: 8px;
 
-  flex: 0 0 auto;
-
   border-radius: 50%;
+
+  flex: 0 0 auto;
 }
 
 
 /* =========================================================
-   关系图说明
-   ========================================================= */
-
-.graph-note {
-  position: absolute;
-
-  left: 50%;
-  bottom: 7px;
-
-  transform: translateX(-50%);
-
-  z-index: 4;
-
-  font-size: 10px;
-
-  color: #606c79;
-
-  text-align: center;
-
-  line-height: 1.8;
-
-  pointer-events: none;
-}
-
-
-/* =========================================================
-   移动端
+   手机 / 平板
    ========================================================= */
 
 @media (max-width: 900px) {
@@ -457,7 +454,8 @@
     font-size: 9px;
   }
 
-  .graph-legend {
+  #iv-faction .graph-legend,
+  #iv-relation .graph-legend {
     bottom: 16px;
 
     gap: 10px 16px;
@@ -465,7 +463,6 @@
     font-size: 10px;
   }
 }
-
 
 @media (max-width: 640px) {
 
@@ -477,7 +474,8 @@
     font-size: 8px;
   }
 
-  .graph-legend {
+  #iv-faction .graph-legend,
+  #iv-relation .graph-legend {
     max-width:
       calc(100% - 30px);
 
@@ -486,4 +484,3 @@
     gap: 8px 12px;
   }
 }
-```
