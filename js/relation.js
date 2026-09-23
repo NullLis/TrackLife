@@ -219,54 +219,96 @@ window.RelationUI = (() => {
       vb.height * state.scale;
 
     /*
+     * 无论缩放到多小，都保留可拖动空间。
+     *
+     * 原逻辑在内容小于视口时会强制居中：
+     *
+     *   state.x = (vb.width - scaledWidth) / 2
+     *
+     * 这样一来 scale < 1 时，用户拖动后坐标
+     * 又会立刻被强制改回居中位置。
+     *
+     * 这里给 X/Y 都增加额外拖动缓冲区：
+     * 既保证任何缩放比例都能拖动，
+     * 又避免图形被无限拖出可视区域。
+     */
+    const extraX =
+      vb.width * 0.35;
+
+    const extraY =
+      vb.height * 0.35;
+
+    /*
      * X
      */
+    let minX;
+    let maxX;
+
     if (
-      scaledWidth <= vb.width
+      scaledWidth >= vb.width
     ) {
 
-      state.x =
-        (vb.width - scaledWidth) / 2;
+      minX =
+        vb.width -
+        scaledWidth -
+        extraX;
+
+      maxX =
+        extraX;
 
     } else {
 
-      const minX =
-        vb.width - scaledWidth;
+      minX =
+        -extraX;
 
-      const maxX = 0;
-
-      state.x =
-        clamp(
-          state.x,
-          minX,
-          maxX
-        );
+      maxX =
+        vb.width -
+        scaledWidth +
+        extraX;
     }
+
+    state.x =
+      clamp(
+        state.x,
+        minX,
+        maxX
+      );
 
     /*
      * Y
      */
+    let minY;
+    let maxY;
+
     if (
-      scaledHeight <= vb.height
+      scaledHeight >= vb.height
     ) {
 
-      state.y =
-        (vb.height - scaledHeight) / 2;
+      minY =
+        vb.height -
+        scaledHeight -
+        extraY;
+
+      maxY =
+        extraY;
 
     } else {
 
-      const minY =
-        vb.height - scaledHeight;
+      minY =
+        -extraY;
 
-      const maxY = 0;
-
-      state.y =
-        clamp(
-          state.y,
-          minY,
-          maxY
-        );
+      maxY =
+        vb.height -
+        scaledHeight +
+        extraY;
     }
+
+    state.y =
+      clamp(
+        state.y,
+        minY,
+        maxY
+      );
   }
 
   /* =========================================================
