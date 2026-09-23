@@ -423,8 +423,6 @@
 
   <!-- =========================================================
        全屏信息页面
-
-       页面标题统一由顶部 .topbar 显示。
   ========================================================== -->
 
   <section
@@ -478,14 +476,6 @@
         ></div>
 
 
-        <!--
-          保留给现有 JS 使用。
-
-          不显示第二个顶部模块，
-          但保留这些 ID 可以避免旧代码
-          document.getElementById(...) 返回 null。
-        -->
-
         <span
           id="resourcePageDesc"
           hidden
@@ -513,6 +503,7 @@
           <svg
             class="graph-large-svg"
             viewBox="0 0 300 240"
+            preserveAspectRatio="none"
             aria-label="势力关系图"
           >
 
@@ -582,8 +573,6 @@
         </div>
 
 
-        <!-- 保留给 JS 使用 -->
-
         <span
           id="factionPageDesc"
           hidden
@@ -611,6 +600,7 @@
           <svg
             class="graph-large-svg"
             viewBox="0 0 300 240"
+            preserveAspectRatio="none"
             aria-label="人物关系图"
           >
 
@@ -680,8 +670,6 @@
         </div>
 
 
-        <!-- 保留给 JS 使用 -->
-
         <span
           id="relationPageDesc"
           hidden
@@ -704,7 +692,7 @@
 
 
     <!-- =======================================================
-         唯一顶部模块
+         顶部栏
     ======================================================== -->
 
     <header class="topbar">
@@ -1033,7 +1021,6 @@
 
       <div class="map-timeline-head">
 
-
         <span class="map-timeline-label">
           时间进度
         </span>
@@ -1050,15 +1037,11 @@
       </div>
 
 
-      <!-- 时间轴事件 -->
-
       <div
         class="timeline-events"
         id="timelineEvents"
       ></div>
 
-
-      <!-- 时间轴轨道 -->
 
       <div class="map-timeline-track">
 
@@ -1151,8 +1134,6 @@
 
       </div>
 
-
-      <!-- 时间轴统计 -->
 
       <div
         class="map-timeline-stat"
