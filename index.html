@@ -423,6 +423,9 @@
 
   <!-- =========================================================
        全屏信息页面
+       
+       人物关系 / 势力关系作为底层全屏画布。
+       顶部栏、左侧导航、右侧详情等由 overlayLayer 覆盖。
   ========================================================== -->
 
   <section
@@ -476,6 +479,11 @@
         ></div>
 
 
+        <!--
+          保留给现有 JS 使用。
+          不显示第二个顶部模块。
+        -->
+
         <span
           id="resourcePageDesc"
           hidden
@@ -487,6 +495,8 @@
 
       <!-- =====================================================
            势力关系
+           
+           整个 SVG 作为当前视图底层画布。
       ====================================================== -->
 
       <section
@@ -502,8 +512,8 @@
 
           <svg
             class="graph-large-svg"
-            viewBox="0 0 300 240"
-            preserveAspectRatio="none"
+            viewBox="0 0 420 240"
+            preserveAspectRatio="xMidYMid meet"
             aria-label="势力关系图"
           >
 
@@ -573,6 +583,8 @@
         </div>
 
 
+        <!-- 保留给 JS 使用 -->
+
         <span
           id="factionPageDesc"
           hidden
@@ -584,6 +596,8 @@
 
       <!-- =====================================================
            人物关系
+           
+           整个 SVG 作为当前视图底层画布。
       ====================================================== -->
 
       <section
@@ -599,8 +613,8 @@
 
           <svg
             class="graph-large-svg"
-            viewBox="0 0 300 240"
-            preserveAspectRatio="none"
+            viewBox="0 0 420 240"
+            preserveAspectRatio="xMidYMid meet"
             aria-label="人物关系图"
           >
 
@@ -670,6 +684,8 @@
         </div>
 
 
+        <!-- 保留给 JS 使用 -->
+
         <span
           id="relationPageDesc"
           hidden
@@ -686,6 +702,8 @@
 
   <!-- =========================================================
        全局浮层
+       
+       所有控制 UI 都位于关系图之上。
   ========================================================== -->
 
   <div id="overlayLayer">
@@ -744,7 +762,9 @@
           type="button"
         >
 
-          <span>＋</span>
+          <span>
+            ＋
+          </span>
 
           <span class="tool-text">
             放大
@@ -759,7 +779,9 @@
           type="button"
         >
 
-          <span>－</span>
+          <span>
+            －
+          </span>
 
           <span class="tool-text">
             缩小
@@ -774,7 +796,9 @@
           type="button"
         >
 
-          <span>⟲</span>
+          <span>
+            ⟲
+          </span>
 
           <span class="tool-text">
             重置
@@ -1021,6 +1045,7 @@
 
       <div class="map-timeline-head">
 
+
         <span class="map-timeline-label">
           时间进度
         </span>
@@ -1037,11 +1062,15 @@
       </div>
 
 
+      <!-- 时间轴事件 -->
+
       <div
         class="timeline-events"
         id="timelineEvents"
       ></div>
 
+
+      <!-- 时间轴轨道 -->
 
       <div class="map-timeline-track">
 
@@ -1134,6 +1163,8 @@
 
       </div>
 
+
+      <!-- 时间轴统计 -->
 
       <div
         class="map-timeline-stat"
