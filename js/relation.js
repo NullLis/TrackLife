@@ -2,71 +2,146 @@ window.RelationUI = (() => {
 
   const NS = WorldUtils.svgNS;
 
+
+  /* ============================================================
+     关系图设计尺寸
+
+     原始数据坐标大约：
+       X：44 ~ 256
+       Y：44 ~ 216
+
+     将 X 横向放大，让关系图更适合全屏宽屏显示。
+  ============================================================ */
+
+  const DESIGN_W = 420;
+  const DESIGN_H = 240;
+
+  const SOURCE_W = 300;
+  const SOURCE_H = 240;
+
+  const X_SCALE = DESIGN_W / SOURCE_W;
+
+
   /*
-   * ============================================================
-   * 关系图基础尺寸
+   * 初始显示比例。
    *
-   * SVG 的原始 viewBox：
-   * 0 0 300 240
-   *
-   * 我们通过动态修改 viewBox 实现：
-   *   - 缩放
-   *   - 平移
-   *
-   * 不修改 SVG 内部节点坐标。
-   * ============================================================
+   * 1.00 = 完整设计区域
+   * 1.08 = 稍微放大
    */
+  const INITIAL_ZOOM = 1.08;
 
-  const WORLD_W = 300;
-  const WORLD_H = 240;
-
-  const MIN_ZOOM = 0.65;
-  const MAX_ZOOM = 3.2;
 
   /*
-   * 两张关系图分别保存自己的状态。
+   * 鼠标滚轮缩放范围。
    */
+  const MIN_ZOOM = 0.45;
+  const MAX_ZOOM = 3.8;
+
+
+  /*
+   * 数据坐标中心。
+   */
+  const CENTER_X =
+    DESIGN_W / 2;
+
+  const CENTER_Y =
+    DESIGN_H / 2;
+
+
+  /* ============================================================
+     图状态
+  ============================================================ */
+
   const graphStates = {
-    faction: {
-      svgId: 'factionEdges',
-      nodeSvgId: 'factionNodes',
-      viewX: 0,
-      viewY: 0,
-      viewW: WORLD_W,
-      viewH: WORLD_H,
 
-      pointerId: null,
-      dragging: false,
-      moved: false,
-      startClientX: 0,
-      startClientY: 0,
-      startViewX: 0,
-      startViewY: 0,
-      suppressClickUntil: 0
+    faction: {
+
+      svgId:
+        'factionEdges',
+
+      nodeSvgId:
+        'factionNodes',
+
+      viewX:0,
+      viewY:0,
+
+      viewW:
+        DESIGN_W,
+
+      viewH:
+        DESIGN_H,
+
+      baseViewW:
+        DESIGN_W,
+
+      baseViewH:
+        DESIGN_H,
+
+      pointerId:null,
+
+      dragging:false,
+
+      moved:false,
+
+      hasUserView:false,
+
+      startClientX:0,
+      startClientY:0,
+
+      startViewX:0,
+      startViewY:0,
+
+      suppressClickUntil:0
+
     },
 
-    character: {
-      svgId: 'relationEdges',
-      nodeSvgId: 'relationNodes',
-      viewX: 0,
-      viewY: 0,
-      viewW: WORLD_W,
-      viewH: WORLD_H,
 
-      pointerId: null,
-      dragging: false,
-      moved: false,
-      startClientX: 0,
-      startClientY: 0,
-      startViewX: 0,
-      startViewY: 0,
-      suppressClickUntil: 0
+    character: {
+
+      svgId:
+        'relationEdges',
+
+      nodeSvgId:
+        'relationNodes',
+
+      viewX:0,
+      viewY:0,
+
+      viewW:
+        DESIGN_W,
+
+      viewH:
+        DESIGN_H,
+
+      baseViewW:
+        DESIGN_W,
+
+      baseViewH:
+        DESIGN_H,
+
+      pointerId:null,
+
+      dragging:false,
+
+      moved:false,
+
+      hasUserView:false,
+
+      startClientX:0,
+      startClientY:0,
+
+      startViewX:0,
+      startViewY:0,
+
+      suppressClickUntil:0
+
     }
+
   };
 
 
   /* ============================================================
-     当前项目时间状态
+     当前年份状态
   ============================================================ */
 
   function active(item) {
@@ -75,122 +150,67 @@ window.RelationUI = (() => {
       item,
       WorldState.currentYear
     );
+
   }
 
 
   /* ============================================================
-     Zoom
+     当前状态文字
+  ============================================================ */
+
+  function getCurrentStatus(item) {
+
+    if (!item || !Array.isArray(item.statuses)) {
+
+      return '';
+
+    }
+
+
+    const current =
+      item.statuses.find(
+        status =>
+          WorldState.currentYear >= status.from &&
+          WorldState.currentYear <= status.to
+      );
+
+
+    return current?.label || '';
+
+  }
+
+
+  /* ============================================================
+     数据坐标 -> 关系图坐标
+  ============================================================ */
+
+  function graphX(x) {
+
+    return CENTER_X +
+      (x - SOURCE_W / 2) *
+      X_SCALE;
+
+  }
+
+
+  function graphY(y) {
+
+    return y;
+
+  }
+
+
+  /* ============================================================
+     当前 Zoom
   ============================================================ */
 
   function currentZoom(state) {
 
-    return WORLD_W / state.viewW;
-  }
-
-
-  /* ============================================================
-     限制 viewBox
-     
-     不允许拖动到完全看不到关系图内容的位置。
-  ============================================================ */
-
-  function clampView(state) {
-
-    /*
-     * X
-     */
-    if (state.viewW >= WORLD_W) {
-
-      state.viewX =
-        (WORLD_W - state.viewW) / 2;
-
-    } else {
-
-      const maxX =
-        WORLD_W - state.viewW;
-
-      state.viewX =
-        Math.max(
-          0,
-          Math.min(
-            maxX,
-            state.viewX
-          )
-        );
-    }
-
-
-    /*
-     * Y
-     */
-    if (state.viewH >= WORLD_H) {
-
-      state.viewY =
-        (WORLD_H - state.viewH) / 2;
-
-    } else {
-
-      const maxY =
-        WORLD_H - state.viewH;
-
-      state.viewY =
-        Math.max(
-          0,
-          Math.min(
-            maxY,
-            state.viewY
-          )
-        );
-    }
-  }
-
-
-  /* ============================================================
-     应用 viewBox
-  ============================================================ */
-
-  function applyViewBox(state) {
-
-    const svg =
-      document.getElementById(
-        state.svgId
-      )?.closest('svg');
-
-    if (!svg) {
-      return;
-    }
-
-    clampView(state);
-
-    svg.setAttribute(
-      'viewBox',
-      `${state.viewX} ${state.viewY} ${state.viewW} ${state.viewH}`
+    return (
+      state.baseViewW /
+      state.viewW
     );
-  }
 
-
-  /* ============================================================
-     重置关系图视图
-  ============================================================ */
-
-  function resetGraphView(state) {
-
-    state.viewX = 0;
-    state.viewY = 0;
-
-    state.viewW =
-      WORLD_W;
-
-    state.viewH =
-      WORLD_H;
-
-    state.moved =
-      false;
-
-    state.dragging =
-      false;
-
-    applyViewBox(state);
   }
 
 
@@ -201,13 +221,329 @@ window.RelationUI = (() => {
   function getGraphSvg(state) {
 
     return document
-      .getElementById(state.svgId)
+      .getElementById(
+        state.svgId
+      )
       ?.closest('svg');
+
   }
 
 
   /* ============================================================
-     鼠标位置转换为 SVG world 坐标
+     获取 SVG 尺寸
+  ============================================================ */
+
+  function getSvgAspect(state) {
+
+    const svg =
+      getGraphSvg(state);
+
+
+    if (!svg) {
+
+      return DESIGN_W / DESIGN_H;
+
+    }
+
+
+    const rect =
+      svg.getBoundingClientRect();
+
+
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0
+    ) {
+
+      return DESIGN_W / DESIGN_H;
+
+    }
+
+
+    return (
+      rect.width /
+      rect.height
+    );
+
+  }
+
+
+  /* ============================================================
+     根据浏览器实际比例计算初始 ViewBox
+     
+     这样：
+       16:9
+       16:10
+       4:3
+       手机竖屏
+     
+     都不会因为 SVG 比例不同产生严重变形。
+  ============================================================ */
+
+  function calculateBaseView(state) {
+
+    const aspect =
+      getSvgAspect(state);
+
+
+    let baseW =
+      DESIGN_W;
+
+    let baseH =
+      DESIGN_H;
+
+
+    const designAspect =
+      DESIGN_W /
+      DESIGN_H;
+
+
+    if (
+      aspect >
+      designAspect
+    ) {
+
+      /*
+       * 屏幕更宽：
+       * 增加可视世界宽度。
+       */
+      baseH =
+        DESIGN_H;
+
+      baseW =
+        DESIGN_H *
+        aspect;
+
+    } else {
+
+      /*
+       * 屏幕更高：
+       * 增加可视世界高度。
+       */
+      baseW =
+        DESIGN_W;
+
+      baseH =
+        DESIGN_W /
+        aspect;
+
+    }
+
+
+    state.baseViewW =
+      baseW;
+
+    state.baseViewH =
+      baseH;
+
+  }
+
+
+  /* ============================================================
+     限制 ViewBox
+
+     重点：
+     ------------------------------------------------------------
+     旧版本的问题：
+
+       if(viewW >= WORLD_W)
+         viewX = center
+
+     导致缩小后完全不能拖。
+
+     现在允许：
+       放大时拖
+       默认比例拖
+       缩小时拖
+       超出设计区域后继续拖
+
+     同时设置合理的拖动余量。
+  ============================================================ */
+
+  function clampRange(
+    value,
+    worldSize,
+    viewSize
+  ) {
+
+    /*
+     * 缩放后仍然是正常视野：
+     * viewSize < worldSize
+     */
+    if (
+      viewSize <
+      worldSize
+    ) {
+
+      const margin =
+        Math.max(
+          18,
+          Math.min(
+            80,
+            viewSize * 0.12
+          )
+        );
+
+
+      return Math.max(
+        -margin,
+        Math.min(
+          worldSize -
+            viewSize +
+            margin,
+
+          value
+        )
+      );
+
+    }
+
+
+    /*
+     * 缩小到整个设计区域
+     * 都装进 ViewBox 后，
+     * 仍然允许拖动。
+     */
+    const extra =
+      Math.max(
+        40,
+        (
+          viewSize -
+          worldSize
+        ) * 0.65
+      );
+
+
+    return Math.max(
+      worldSize -
+        viewSize -
+        extra,
+
+      Math.min(
+        extra,
+        value
+      )
+    );
+
+  }
+
+
+  function clampView(state) {
+
+    state.viewX =
+      clampRange(
+        state.viewX,
+        DESIGN_W,
+        state.viewW
+      );
+
+
+    state.viewY =
+      clampRange(
+        state.viewY,
+        DESIGN_H,
+        state.viewH
+      );
+
+  }
+
+
+  /* ============================================================
+     应用 ViewBox
+  ============================================================ */
+
+  function applyViewBox(state) {
+
+    const svg =
+      getGraphSvg(state);
+
+
+    if (!svg) {
+
+      return;
+
+    }
+
+
+    clampView(state);
+
+
+    svg.setAttribute(
+      'viewBox',
+      [
+        state.viewX,
+        state.viewY,
+        state.viewW,
+        state.viewH
+      ].join(' ')
+    );
+
+  }
+
+
+  /* ============================================================
+     初始视图 / 重置视图
+  ============================================================ */
+
+  function resetGraphView(
+    state,
+    force = false
+  ) {
+
+    if (
+      state.hasUserView &&
+      !force
+    ) {
+
+      return;
+
+    }
+
+
+    calculateBaseView(state);
+
+
+    const zoom =
+      INITIAL_ZOOM;
+
+
+    state.viewW =
+      state.baseViewW /
+      zoom;
+
+
+    state.viewH =
+      state.baseViewH /
+      zoom;
+
+
+    /*
+     * 始终以设计中心为中心。
+     */
+    state.viewX =
+      CENTER_X -
+      state.viewW / 2;
+
+
+    state.viewY =
+      CENTER_Y -
+      state.viewH / 2;
+
+
+    state.moved =
+      false;
+
+    state.dragging =
+      false;
+
+
+    applyViewBox(state);
+
+  }
+
+
+  /* ============================================================
+     鼠标 / 触摸坐标转换
   ============================================================ */
 
   function clientToWorld(
@@ -219,12 +555,14 @@ window.RelationUI = (() => {
     const svg =
       getGraphSvg(state);
 
+
     if (!svg) {
 
       return {
-        x: 0,
-        y: 0
+        x:CENTER_X,
+        y:CENTER_Y
       };
+
     }
 
 
@@ -233,11 +571,18 @@ window.RelationUI = (() => {
 
 
     const px =
-      (clientX - rect.left) /
+      (
+        clientX -
+        rect.left
+      ) /
       rect.width;
 
+
     const py =
-      (clientY - rect.top) /
+      (
+        clientY -
+        rect.top
+      ) /
       rect.height;
 
 
@@ -245,21 +590,21 @@ window.RelationUI = (() => {
 
       x:
         state.viewX +
-        px * state.viewW,
+        px *
+        state.viewW,
 
       y:
         state.viewY +
-        py * state.viewH
+        py *
+        state.viewH
 
     };
+
   }
 
 
   /* ============================================================
      鼠标位置缩放
-     
-     重点：
-     缩放时保持鼠标指向的点不动。
   ============================================================ */
 
   function zoomAtPoint(
@@ -276,17 +621,25 @@ window.RelationUI = (() => {
     const newZoom =
       Math.max(
         MIN_ZOOM,
+
         Math.min(
           MAX_ZOOM,
-          oldZoom * factor
+
+          oldZoom *
+          factor
         )
       );
 
 
     if (
-      newZoom === oldZoom
+      Math.abs(
+        newZoom -
+        oldZoom
+      ) < 0.0001
     ) {
+
       return;
+
     }
 
 
@@ -299,17 +652,23 @@ window.RelationUI = (() => {
 
 
     const newW =
-      WORLD_W / newZoom;
+      state.baseViewW /
+      newZoom;
+
 
     const newH =
-      WORLD_H / newZoom;
+      state.baseViewH /
+      newZoom;
 
 
     const svg =
       getGraphSvg(state);
 
+
     if (!svg) {
+
       return;
+
     }
 
 
@@ -318,34 +677,50 @@ window.RelationUI = (() => {
 
 
     const px =
-      (clientX - rect.left) /
+      (
+        clientX -
+        rect.left
+      ) /
       rect.width;
 
+
     const py =
-      (clientY - rect.top) /
+      (
+        clientY -
+        rect.top
+      ) /
       rect.height;
 
 
     state.viewW =
       newW;
 
+
     state.viewH =
       newH;
 
 
     /*
-     * 让鼠标所在地图坐标保持在原来的屏幕位置。
+     * 保持鼠标所在位置不跳动。
      */
     state.viewX =
       point.x -
-      px * newW;
+      px *
+      newW;
+
 
     state.viewY =
       point.y -
-      py * newH;
+      py *
+      newH;
+
+
+    state.hasUserView =
+      true;
 
 
     applyViewBox(state);
+
   }
 
 
@@ -362,8 +737,11 @@ window.RelationUI = (() => {
     const svg =
       getGraphSvg(state);
 
+
     if (!svg) {
+
       return;
+
     }
 
 
@@ -375,19 +753,26 @@ window.RelationUI = (() => {
       clientX -
       state.startClientX;
 
+
     const dy =
       clientY -
       state.startClientY;
 
 
     /*
-     * 超过 3px 才认为是真正拖动。
+     * 3px 阈值：
+     * 防止普通点击被识别成拖动。
      */
     if (
       !state.moved &&
-      Math.hypot(dx, dy) < 3
+      Math.hypot(
+        dx,
+        dy
+      ) < 3
     ) {
+
       return;
+
     }
 
 
@@ -395,17 +780,19 @@ window.RelationUI = (() => {
       true;
 
 
-    /*
-     * 像素 -> viewBox 世界坐标
-     */
     const worldDX =
-      dx /
-      rect.width *
+      (
+        dx /
+        rect.width
+      ) *
       state.viewW;
 
+
     const worldDY =
-      dy /
-      rect.height *
+      (
+        dy /
+        rect.height
+      ) *
       state.viewH;
 
 
@@ -413,17 +800,23 @@ window.RelationUI = (() => {
       state.startViewX -
       worldDX;
 
+
     state.viewY =
       state.startViewY -
       worldDY;
 
 
+    state.hasUserView =
+      true;
+
+
     applyViewBox(state);
+
   }
 
 
   /* ============================================================
-     绑定关系图缩放 / 拖动交互
+     图交互绑定
   ============================================================ */
 
   function bindGraphInteraction(
@@ -436,18 +829,20 @@ window.RelationUI = (() => {
         .getElementById(svgId)
         ?.closest('svg');
 
+
     if (!svg) {
+
       return;
+
     }
 
 
-    /*
-     * 防止重复绑定。
-     */
     if (
       svg.dataset.graphInteractionBound === '1'
     ) {
+
       return;
+
     }
 
 
@@ -455,17 +850,11 @@ window.RelationUI = (() => {
       '1';
 
 
-    /*
-     * 鼠标 / 触摸视觉状态
-     */
     svg.classList.add(
       'graph-pan-enabled'
     );
 
 
-    /*
-     * 初始 viewBox
-     */
     applyViewBox(state);
 
 
@@ -478,21 +867,25 @@ window.RelationUI = (() => {
       event => {
 
         /*
-         * 只接受左键鼠标。
+         * 鼠标只接受左键。
          */
         if (
           event.pointerType === 'mouse' &&
           event.button !== 0
         ) {
+
           return;
+
         }
 
 
         state.pointerId =
           event.pointerId;
 
+
         state.dragging =
           true;
+
 
         state.moved =
           false;
@@ -501,12 +894,14 @@ window.RelationUI = (() => {
         state.startClientX =
           event.clientX;
 
+
         state.startClientY =
           event.clientY;
 
 
         state.startViewX =
           state.viewX;
+
 
         state.startViewY =
           state.viewY;
@@ -524,7 +919,7 @@ window.RelationUI = (() => {
           );
 
         } catch (_) {
-          /* 某些浏览器不支持时忽略 */
+
         }
 
       }
@@ -541,9 +936,12 @@ window.RelationUI = (() => {
 
         if (
           !state.dragging ||
-          state.pointerId !== event.pointerId
+          state.pointerId !==
+            event.pointerId
         ) {
+
           return;
+
         }
 
 
@@ -566,22 +964,25 @@ window.RelationUI = (() => {
       event => {
 
         if (
-          state.pointerId !== event.pointerId
+          state.pointerId !==
+          event.pointerId
         ) {
+
           return;
+
         }
 
 
-        if (state.moved) {
+        if (
+          state.moved
+        ) {
 
           /*
-           * 拖动结束后，短时间内禁止 click。
-           *
-           * 防止：
-           * 拖动画布 → 松开鼠标 → 误打开人物详情。
+           * 拖动后禁止短时间 click。
            */
           state.suppressClickUntil =
-            performance.now() + 180;
+            performance.now() +
+            220;
 
         }
 
@@ -606,13 +1007,10 @@ window.RelationUI = (() => {
           );
 
         } catch (_) {
-          /* 忽略 */
+
         }
 
 
-        /*
-         * 稍后允许正常 click。
-         */
         window.setTimeout(
           () => {
 
@@ -620,7 +1018,7 @@ window.RelationUI = (() => {
               false;
 
           },
-          220
+          240
         );
 
       }
@@ -633,7 +1031,7 @@ window.RelationUI = (() => {
 
     svg.addEventListener(
       'pointercancel',
-      event => {
+      () => {
 
         state.dragging =
           false;
@@ -660,11 +1058,8 @@ window.RelationUI = (() => {
       'wheel',
       event => {
 
-        /*
-         * 鼠标滚轮只控制关系图，
-         * 不让外层信息页面一起滚动。
-         */
         event.preventDefault();
+
         event.stopPropagation();
 
 
@@ -683,13 +1078,13 @@ window.RelationUI = (() => {
 
       },
       {
-        passive: false
+        passive:false
       }
     );
 
 
     /* ----------------------------------------------------------
-       双击恢复视图
+       双击重置
     ---------------------------------------------------------- */
 
     svg.addEventListener(
@@ -699,11 +1094,214 @@ window.RelationUI = (() => {
         event.preventDefault();
         event.stopPropagation();
 
+
+        state.hasUserView =
+          false;
+
+
         resetGraphView(
-          state
+          state,
+          true
         );
 
       }
+    );
+
+  }
+
+
+  /* ============================================================
+     创建 SVG 文字标签
+  ============================================================ */
+
+  function createNodeLabel(
+    node,
+    g,
+    future,
+    isCharacter
+  ) {
+
+    const name =
+      String(
+        node.name || ''
+      );
+
+
+    const status =
+      getCurrentStatus(
+        node
+      );
+
+
+    const role =
+      future
+        ? '尚未登场'
+        : (
+            status ||
+            node.role ||
+            node.category ||
+            ''
+          );
+
+
+    /*
+     * 中文字符宽度估算。
+     */
+    const nameWidth =
+      Math.max(
+        48,
+        name.length *
+          13 +
+          22
+      );
+
+
+    const roleWidth =
+      Math.max(
+        54,
+        String(role).length *
+          7 +
+          20
+      );
+
+
+    const labelWidth =
+      Math.max(
+        nameWidth,
+        roleWidth
+      );
+
+
+    /*
+     * 标签整体底板。
+     */
+    const plate =
+      document.createElementNS(
+        NS,
+        'rect'
+      );
+
+
+    plate.classList.add(
+      'rel-label-bg'
+    );
+
+
+    plate.setAttribute(
+      'x',
+      node.x -
+        labelWidth / 2
+    );
+
+
+    plate.setAttribute(
+      'y',
+      node.y + 17
+    );
+
+
+    plate.setAttribute(
+      'width',
+      labelWidth
+    );
+
+
+    plate.setAttribute(
+      'height',
+      34
+    );
+
+
+    plate.setAttribute(
+      'rx',
+      8
+    );
+
+
+    g.appendChild(
+      plate
+    );
+
+
+    /*
+     * 人物 / 势力名称。
+     */
+    const nameText =
+      document.createElementNS(
+        NS,
+        'text'
+      );
+
+
+    nameText.classList.add(
+      'rel-name'
+    );
+
+
+    nameText.setAttribute(
+      'x',
+      node.x
+    );
+
+
+    nameText.setAttribute(
+      'y',
+      node.y + 31
+    );
+
+
+    nameText.textContent =
+      name;
+
+
+    g.appendChild(
+      nameText
+    );
+
+
+    /*
+     * 身份 / 当前状态。
+     */
+    const roleText =
+      document.createElementNS(
+        NS,
+        'text'
+      );
+
+
+    roleText.classList.add(
+      'rel-role'
+    );
+
+
+    roleText.setAttribute(
+      'x',
+      node.x
+    );
+
+
+    roleText.setAttribute(
+      'y',
+      node.y + 45
+    );
+
+
+    roleText.textContent =
+      role;
+
+
+    g.appendChild(
+      roleText
+    );
+
+
+    /*
+     * 根据人物 / 势力添加 class。
+     */
+    g.classList.add(
+      isCharacter
+        ? 'character-node'
+        : 'faction-node'
     );
 
   }
@@ -726,16 +1324,20 @@ window.RelationUI = (() => {
         edgesId
       );
 
+
     const nodesBox =
       document.getElementById(
         nodesId
       );
 
+
     if (
       !edgesBox ||
       !nodesBox
     ) {
+
       return;
+
     }
 
 
@@ -743,13 +1345,23 @@ window.RelationUI = (() => {
       edgesBox.closest('svg');
 
 
-    edgesBox.innerHTML = '';
-    nodesBox.innerHTML = '';
+    const state =
+      nodesId === 'factionNodes'
+        ? graphStates.faction
+        : graphStates.character;
 
 
-    /*
-     * 根据节点 id 建立快速查询表。
-     */
+    const isCharacter =
+      nodesId === 'relationNodes';
+
+
+    edgesBox.innerHTML =
+      '';
+
+    nodesBox.innerHTML =
+      '';
+
+
     const nodeMap =
       Object.fromEntries(
         nodes.map(
@@ -762,7 +1374,7 @@ window.RelationUI = (() => {
 
 
     /* ----------------------------------------------------------
-       绘制关系线
+       关系线
     ---------------------------------------------------------- */
 
     edges.forEach(
@@ -770,6 +1382,7 @@ window.RelationUI = (() => {
 
         const a =
           nodeMap[edge.from];
+
 
         const b =
           nodeMap[edge.to];
@@ -779,15 +1392,35 @@ window.RelationUI = (() => {
           !a ||
           !b
         ) {
+
           return;
+
         }
 
 
+        const ax =
+          graphX(a.x);
+
+
+        const ay =
+          graphY(a.y);
+
+
+        const bx =
+          graphX(b.x);
+
+
+        const by =
+          graphY(b.y);
+
+
         const dx =
-          b.x - a.x;
+          bx - ax;
+
 
         const dy =
-          b.y - a.y;
+          by - ay;
+
 
         const len =
           Math.hypot(
@@ -799,29 +1432,42 @@ window.RelationUI = (() => {
         const ux =
           dx / len;
 
+
         const uy =
           dy / len;
 
 
+        /*
+         * 节点外边缘。
+         */
         const nodeRadius =
-          16;
+          isCharacter
+            ? 13
+            : 14;
 
 
         const x1 =
-          a.x +
-          ux * nodeRadius;
+          ax +
+          ux *
+          nodeRadius;
+
 
         const y1 =
-          a.y +
-          uy * nodeRadius;
+          ay +
+          uy *
+          nodeRadius;
+
 
         const x2 =
-          b.x -
-          ux * nodeRadius;
+          bx -
+          ux *
+          nodeRadius;
+
 
         const y2 =
-          b.y -
-          uy * nodeRadius;
+          by -
+          uy *
+          nodeRadius;
 
 
         const line =
@@ -829,6 +1475,7 @@ window.RelationUI = (() => {
             NS,
             'line'
           );
+
 
         line.classList.add(
           'rel-edge'
@@ -865,20 +1512,24 @@ window.RelationUI = (() => {
           x1
         );
 
+
         line.setAttribute(
           'y1',
           y1
         );
+
 
         line.setAttribute(
           'x2',
           x2
         );
 
+
         line.setAttribute(
           'y2',
           y2
         );
+
 
         line.setAttribute(
           'stroke',
@@ -886,9 +1537,18 @@ window.RelationUI = (() => {
           '#4a5665'
         );
 
+
         line.setAttribute(
           'stroke-width',
-          '1.6'
+          isCharacter
+            ? '1.5'
+            : '1.8'
+        );
+
+
+        line.setAttribute(
+          'stroke-linecap',
+          'round'
         );
 
 
@@ -898,7 +1558,7 @@ window.RelationUI = (() => {
 
           line.setAttribute(
             'stroke-dasharray',
-            '4 3'
+            '5 4'
           );
 
         }
@@ -910,7 +1570,7 @@ window.RelationUI = (() => {
 
 
         /*
-         * 关系文字
+         * 关系文字。
          */
         if (
           edge.label
@@ -922,26 +1582,32 @@ window.RelationUI = (() => {
               'text'
             );
 
+
           label.classList.add(
             'rel-edge-label'
           );
+
 
           label.setAttribute(
             'x',
             (x1 + x2) / 2
           );
 
+
           label.setAttribute(
             'y',
-            (y1 + y2) / 2 - 3
+            (y1 + y2) / 2 - 4
           );
+
 
           label.textContent =
             edge.label;
 
+
           edgesBox.appendChild(
             label
           );
+
         }
 
       }
@@ -949,17 +1615,26 @@ window.RelationUI = (() => {
 
 
     /* ----------------------------------------------------------
-       绘制节点
+       节点
     ---------------------------------------------------------- */
 
     nodes.forEach(
       node => {
+
+        const x =
+          graphX(node.x);
+
+
+        const y =
+          graphY(node.y);
+
 
         const future =
           WorldMap.isFuture(
             node,
             WorldState.currentYear
           );
+
 
         const ended =
           WorldMap.isEnded(
@@ -980,7 +1655,9 @@ window.RelationUI = (() => {
         );
 
 
-        if (future) {
+        if (
+          future
+        ) {
 
           g.classList.add(
             'future'
@@ -989,7 +1666,9 @@ window.RelationUI = (() => {
         }
 
 
-        if (ended) {
+        if (
+          ended
+        ) {
 
           g.classList.add(
             'rel-node-ended'
@@ -1003,12 +1682,15 @@ window.RelationUI = (() => {
 
 
         g.style.color =
-          node.color;
+          node.color ||
+          '#d4a76a';
 
 
-        /* ------------------------------------------------------
-           光晕
-        ------------------------------------------------------ */
+        /*
+         * ------------------------------------------------------
+         * 外层光晕
+         * ------------------------------------------------------
+         */
 
         const halo =
           document.createElementNS(
@@ -1016,39 +1698,113 @@ window.RelationUI = (() => {
             'circle'
           );
 
+
+        halo.classList.add(
+          'rel-halo'
+        );
+
+
         halo.setAttribute(
           'cx',
-          node.x
+          x
         );
+
 
         halo.setAttribute(
           'cy',
-          node.y
+          y
         );
+
 
         halo.setAttribute(
           'r',
-          '15'
+          isCharacter
+            ? '18'
+            : '20'
         );
+
 
         halo.setAttribute(
           'fill',
-          node.color
+          node.color ||
+          '#d4a76a'
         );
 
-        halo.setAttribute(
-          'opacity',
-          '.12'
-        );
 
         g.appendChild(
           halo
         );
 
 
-        /* ------------------------------------------------------
-           中心节点
-        ------------------------------------------------------ */
+        /*
+         * ------------------------------------------------------
+         * 外环
+         * ------------------------------------------------------
+         */
+
+        const ring =
+          document.createElementNS(
+            NS,
+            'circle'
+          );
+
+
+        ring.classList.add(
+          'rel-ring'
+        );
+
+
+        ring.setAttribute(
+          'cx',
+          x
+        );
+
+
+        ring.setAttribute(
+          'cy',
+          y
+        );
+
+
+        ring.setAttribute(
+          'r',
+          isCharacter
+            ? '11'
+            : '12'
+        );
+
+
+        ring.setAttribute(
+          'fill',
+          '#0e1116'
+        );
+
+
+        ring.setAttribute(
+          'stroke',
+          node.color ||
+          '#d4a76a'
+        );
+
+
+        ring.setAttribute(
+          'stroke-width',
+          isCharacter
+            ? '2'
+            : '2.4'
+        );
+
+
+        g.appendChild(
+          ring
+        );
+
+
+        /*
+         * ------------------------------------------------------
+         * 中心圆
+         * ------------------------------------------------------
+         */
 
         const dot =
           document.createElementNS(
@@ -1056,172 +1812,246 @@ window.RelationUI = (() => {
             'circle'
           );
 
+
         dot.classList.add(
           'dot'
         );
 
+
         dot.setAttribute(
           'cx',
-          node.x
+          x
         );
+
 
         dot.setAttribute(
           'cy',
-          node.y
+          y
         );
+
 
         dot.setAttribute(
           'r',
-          '8'
+          isCharacter
+            ? '7'
+            : '8'
         );
+
 
         dot.setAttribute(
           'fill',
-          node.color
+          node.color ||
+          '#d4a76a'
         );
 
-        dot.setAttribute(
-          'stroke',
-          '#0e1116'
-        );
-
-        dot.setAttribute(
-          'stroke-width',
-          '2'
-        );
 
         g.appendChild(
           dot
         );
 
 
-        /* ------------------------------------------------------
-           人物 / 势力名称
-        ------------------------------------------------------ */
+        /*
+         * ------------------------------------------------------
+         * 中心高光
+         * ------------------------------------------------------
+         */
 
-        const name =
+        const core =
           document.createElementNS(
             NS,
-            'text'
+            'circle'
           );
 
-        name.classList.add(
-          'rel-name'
-        );
 
-        name.setAttribute(
-          'x',
-          node.x
-        );
-
-        name.setAttribute(
-          'y',
-          node.y + 26
-        );
-
-        name.textContent =
-          node.name;
-
-        g.appendChild(
-          name
+        core.classList.add(
+          'rel-core'
         );
 
 
-        /* ------------------------------------------------------
-           身份
-        ------------------------------------------------------ */
-
-        const role =
-          document.createElementNS(
-            NS,
-            'text'
-          );
-
-        role.classList.add(
-          'rel-role'
-        );
-
-        role.setAttribute(
-          'x',
-          node.x
-        );
-
-        role.setAttribute(
-          'y',
-          node.y + 37
+        core.setAttribute(
+          'cx',
+          x - 1.5
         );
 
 
-        role.textContent =
-          active(node)
-            ? node.role
-            : (
-                future
-                  ? '尚未登场'
-                  : '已离场'
-              );
+        core.setAttribute(
+          'cy',
+          y - 1.5
+        );
+
+
+        core.setAttribute(
+          'r',
+          isCharacter
+            ? '2'
+            : '2.2'
+        );
+
+
+        core.setAttribute(
+          'fill',
+          '#ffffff'
+        );
+
+
+        core.setAttribute(
+          'opacity',
+          '.62'
+        );
 
 
         g.appendChild(
-          role
+          core
         );
 
 
-        /* ------------------------------------------------------
-           节点点击
-        ------------------------------------------------------ */
+        /*
+         * ------------------------------------------------------
+         * 当前状态小标记
+         * ------------------------------------------------------
+         */
+
+        const currentStatus =
+          getCurrentStatus(
+            node
+          );
+
+
+        if (
+          currentStatus ||
+          future ||
+          ended
+        ) {
+
+          const stateDot =
+            document.createElementNS(
+              NS,
+              'circle'
+            );
+
+
+          stateDot.classList.add(
+            'rel-state-dot'
+          );
+
+
+          stateDot.setAttribute(
+            'cx',
+            x + 10
+          );
+
+
+          stateDot.setAttribute(
+            'cy',
+            y - 10
+          );
+
+
+          stateDot.setAttribute(
+            'r',
+            '3.6'
+          );
+
+
+          stateDot.setAttribute(
+            'fill',
+
+            future
+              ? '#58616d'
+
+              : ended
+                ? '#657180'
+
+                : node.color
+          );
+
+
+          stateDot.setAttribute(
+            'stroke',
+            '#0e1116'
+          );
+
+
+          stateDot.setAttribute(
+            'stroke-width',
+            '1.5'
+          );
+
+
+          g.appendChild(
+            stateDot
+          );
+
+        }
+
+
+        /*
+         * ------------------------------------------------------
+         * 名称 + 身份
+         * ------------------------------------------------------
+         */
+
+        createNodeLabel(
+          {
+            ...node,
+            x,
+            y
+          },
+          g,
+          future,
+          isCharacter
+        );
+
+
+        /*
+         * ------------------------------------------------------
+         * 点击节点
+         * ------------------------------------------------------
+         */
 
         g.addEventListener(
           'click',
           event => {
 
             event.preventDefault();
+
             event.stopPropagation();
-
-
-            /*
-             * 如果刚刚拖动画布，
-             * 禁止把拖动误判为点击节点。
-             */
-            const state =
-              svg ===
-              document.getElementById(
-                'factionEdges'
-              )?.closest('svg')
-                ? graphStates.faction
-                : graphStates.character;
 
 
             if (
               performance.now() <
               state.suppressClickUntil
             ) {
+
               return;
+
             }
 
 
-            /*
-             * 未登场人物 / 势力
-             */
-            if (future) {
+            if (
+              future
+            ) {
 
               showToast(
                 `“${node.name}”将在天启${WorldUtils.toCN(node.startYear)}年登场`
               );
 
               return;
+
             }
 
 
             /*
-             * 当前统一状态源
+             * 直接使用 renderGraph 传入的 onClick。
              */
-            WorldState.select(
-              node.desc !== undefined
-                ? 'character'
-                : 'faction',
-              node.id
-            );
+            if (
+              typeof onClick ===
+              'function'
+            ) {
+
+              onClick(node);
+
+            }
 
           }
         );
@@ -1235,37 +2065,28 @@ window.RelationUI = (() => {
     );
 
 
-    /*
-     * 恢复当前选择的视觉状态。
-     */
     syncSelectionVisuals();
 
 
-    /*
-     * 如果 SVG 已经存在，
-     * 确保交互绑定不会因为重新 render 被重复绑定。
-     */
     if (svg) {
-
-      const state =
-        nodesId === 'factionNodes'
-          ? graphStates.faction
-          : graphStates.character;
 
       bindGraphInteraction(
         svg.id,
         state
       );
 
+
       applyViewBox(
         state
       );
+
     }
+
   }
 
 
   /* ============================================================
-     同步选中状态
+     当前选中状态
   ============================================================ */
 
   function syncSelectionVisuals() {
@@ -1275,10 +2096,13 @@ window.RelationUI = (() => {
         '.rel-node.selected'
       )
       .forEach(
-        node =>
+        node => {
+
           node.classList.remove(
             'selected'
-          )
+          );
+
+        }
       );
 
 
@@ -1287,15 +2111,21 @@ window.RelationUI = (() => {
 
 
     if (!selected) {
+
       return;
+
     }
 
 
     if (
-      selected.type !== 'faction' &&
-      selected.type !== 'character'
+      selected.type !==
+        'faction' &&
+      selected.type !==
+        'character'
     ) {
+
       return;
+
     }
 
 
@@ -1308,52 +2138,63 @@ window.RelationUI = (() => {
     node?.classList.add(
       'selected'
     );
+
   }
 
 
   /* ============================================================
-     重新绘制全部关系图
+     渲染全部关系图
   ============================================================ */
 
   function renderAll() {
 
     renderGraph(
+
       'factionEdges',
+
       'factionNodes',
+
       window.WorldData.factions,
+
       window.WorldData.factionRelations,
+
       node =>
         WorldState.select(
           'faction',
           node.id
         )
+
     );
 
 
     renderGraph(
+
       'relationEdges',
+
       'relationNodes',
+
       window.WorldData.characters,
+
       window.WorldData.characterRelations,
+
       node =>
         WorldState.select(
           'character',
           node.id
         )
+
     );
 
 
     updateDescriptions();
 
     syncSelectionVisuals();
+
   }
 
 
   /* ============================================================
-     页面说明信息
-     
-     当前 index.html 已经移除了可见的第二顶部模块。
-     这里仅更新隐藏兼容元素。
+     更新隐藏说明
   ============================================================ */
 
   function updateDescriptions() {
@@ -1415,10 +2256,16 @@ window.RelationUI = (() => {
         'factionPageDesc'
       );
 
+
     if (factionDesc) {
 
       factionDesc.textContent =
-        `天启${WorldUtils.toCN(year)}年 · ${activeF}/${window.WorldData.factions.length} 个势力参与世界状态 · ${activeFR}/${window.WorldData.factionRelations.length} 条关系生效`;
+        `天启${WorldUtils.toCN(year)}年 · ` +
+        `${activeF}/${window.WorldData.factions.length} ` +
+        `个势力参与世界状态 · ` +
+        `${activeFR}/${window.WorldData.factionRelations.length} ` +
+        `条关系生效`;
+
     }
 
 
@@ -1427,11 +2274,116 @@ window.RelationUI = (() => {
         'relationPageDesc'
       );
 
+
     if (relationDesc) {
 
       relationDesc.textContent =
-        `天启${WorldUtils.toCN(year)}年 · ${activeC}/${window.WorldData.characters.length} 位人物在场 · ${activeCR}/${window.WorldData.characterRelations.length} 条关系生效`;
+        `天启${WorldUtils.toCN(year)}年 · ` +
+        `${activeC}/${window.WorldData.characters.length} ` +
+        `位人物在场 · ` +
+        `${activeCR}/${window.WorldData.characterRelations.length} ` +
+        `条关系生效`;
+
     }
+
+  }
+
+
+  /* ============================================================
+     当前页面显示时自动重新适配初始比例
+  ============================================================ */
+
+  function observePageVisibility(
+    sectionId,
+    state
+  ) {
+
+    const section =
+      document.getElementById(
+        sectionId
+      );
+
+
+    if (!section) {
+
+      return;
+
+    }
+
+
+    const observer =
+      new MutationObserver(
+        () => {
+
+          if (
+            section.classList.contains(
+              'active'
+            )
+          ) {
+
+            window.requestAnimationFrame(
+              () => {
+
+                if (
+                  !state.hasUserView
+                ) {
+
+                  resetGraphView(
+                    state
+                  );
+
+                }
+
+              }
+            );
+
+          }
+
+        }
+      );
+
+
+    observer.observe(
+      section,
+      {
+        attributes:true,
+        attributeFilter:[
+          'class'
+        ]
+      }
+    );
+
+  }
+
+
+  /* ============================================================
+     窗口尺寸变化
+  ============================================================ */
+
+  function handleResize() {
+
+    Object.values(
+      graphStates
+    ).forEach(
+      state => {
+
+        /*
+         * 用户没有手动缩放/拖动时，
+         * 自动重新计算初始比例。
+         */
+        if (
+          !state.hasUserView
+        ) {
+
+          resetGraphView(
+            state,
+            true
+          );
+
+        }
+
+      }
+    );
 
   }
 
@@ -1442,15 +2394,11 @@ window.RelationUI = (() => {
 
   function init() {
 
-    /*
-     * 先绑定关系图交互，
-     * 确保即使当前页面还没有打开，
-     * SVG 也能正常使用。
-     */
     bindGraphInteraction(
       'factionEdges',
       graphStates.faction
     );
+
 
     bindGraphInteraction(
       'relationEdges',
@@ -1458,19 +2406,27 @@ window.RelationUI = (() => {
     );
 
 
+    observePageVisibility(
+      'iv-faction',
+      graphStates.faction
+    );
+
+
+    observePageVisibility(
+      'iv-relation',
+      graphStates.character
+    );
+
+
+    /*
+     * 第一次渲染。
+     */
     renderAll();
 
 
     /*
      * 时间轴变化：
-     * 重新渲染节点，
-     * 但是不重置 viewBox。
-     *
-     * 所以：
-     *   用户已经放大到 2 倍
-     *   用户已经把关系图拖到右边
-     *
-     * 改年份后仍保持当前位置。
+     * 节点重新渲染，但用户的视图不重置。
      */
     WorldState.on(
       reason => {
@@ -1496,13 +2452,47 @@ window.RelationUI = (() => {
       }
     );
 
+
+    /*
+     * 窗口尺寸变化。
+     */
+    window.addEventListener(
+      'resize',
+      handleResize
+    );
+
+
+    /*
+     * 第一次尝试建立初始视图。
+     */
+    window.requestAnimationFrame(
+      () => {
+
+        resetGraphView(
+          graphStates.faction,
+          true
+        );
+
+
+        resetGraphView(
+          graphStates.character,
+          true
+        );
+
+      }
+    );
+
   }
 
 
   return {
+
     init,
+
     renderAll,
+
     syncSelectionVisuals
+
   };
 
 })();
